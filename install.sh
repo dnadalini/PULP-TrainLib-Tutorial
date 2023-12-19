@@ -6,11 +6,6 @@ git submodule update --init --recursive
 sudo apt-get install -y build-essential git libftdi-dev libftdi1 doxygen python3-pip libsdl2-dev curl cmake libusb-1.0-0-dev scons gtkwave libsndfile1-dev rsync autoconf automake texinfo libtool pkg-config libsdl2-ttf-dev
 pip install --user argcomplete pyelftools
 
-# Download dependencies for pulp-trainlib
-python -m pip install argparse 
-python -m pip install install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-python -m pip install torchsummary
-
 # Download gnu-gcc-toolchain
 wget https://github.com/pulp-platform/pulp-riscv-gnu-toolchain/releases/download/v1.0.16/v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2
 tar -xf v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2 v1.0.16-pulp-riscv-gcc-ubuntu-18
@@ -24,5 +19,10 @@ export PULP_RISCV_GCC_TOOLCHAIN=v1.0.16-pulp-riscv-gcc-ubuntu-18/
 cd pulp-sdk/
 source configs/pulp-open.sh
 make build
+
+# Download dependencies for pulp-trainlib
+python -m pip install argparse 
+python -m pip install install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+python -m pip install torchsummary
 
 echo "Setup successful!"
