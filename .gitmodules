@@ -4,4 +4,4 @@
 
 [submodule "pulp-sdk"]
 	path = pulp-sdk
-	url = https://github.com/pulp-platform/pulp-sdk/commit/6aaa64684303b5971823e593aafd8cbb3a508cc3
+	url = git@github.com:pulp-platform/pulp-sdk.git
