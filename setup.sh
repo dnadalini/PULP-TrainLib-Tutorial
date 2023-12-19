@@ -1,17 +1,4 @@
-#!/bin/bash
-echo "Beginning setup.."
+export PULP_RISCV_GCC_TOOLCHAIN=v1.0.16-pulp-riscv-gcc-ubuntu-18/
+source v1.0.16-pulp-riscv-gcc-ubuntu-18/sourceme.sh
+source pulp-sdk/configs/pulp-open.sh
 
-# Setup a conda environment
-
-# Download dependencies for pulp-sdk
-
-# Download dependencies for pulp-trainlib
-
-# Download gnu-gcc-toolchain
-wget https://github.com/pulp-platform/pulp-riscv-gnu-toolchain/releases/download/v1.0.16/v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2
-tar -xvzf v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2
-rm -rf v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2
-
-# Build pulp-sdk
-
-echo "Setup successful!"
