@@ -7,8 +7,10 @@ sudo apt-get install -y build-essential git libftdi-dev libftdi1 doxygen python3
 pip install --user argcomplete pyelftools
 
 # Download gnu-gcc-toolchain
-git clone git@github.com:dnadalini/riscv-gcc-toolchain-ubuntu22.git
-cp -r riscv-gcc-toolchain-ubuntu22/pulp-riscv-gcc-toolchain ./
+wget https://github.com/pulp-platform/pulp-riscv-gnu-toolchain/releases/download/v1.0.16/v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2
+tar -xf v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2 -C ./
+mv v1.0.16-pulp-riscv-gcc-ubuntu-18/ pulp-riscv-gcc-toolchain/
+rm -rf v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2
 
 # Set up GCC version 9.4.0
 sudo apt-get update -y && \
