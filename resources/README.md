@@ -1,0 +1,3 @@
+# Extra resources for other OS
+
+In case of Ubuntu 22.02 or higher, please use ....

@@ -25,7 +25,8 @@ cd ..
 
 # Download dependencies for pulp-trainlib
 python -m pip install argparse 
-python -m pip install install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+#python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+python -m pip install install torch torchvision torchaudio
 python -m pip install torchsummary
 
 echo "Setup successful!"
