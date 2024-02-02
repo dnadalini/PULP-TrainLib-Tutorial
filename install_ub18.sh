@@ -8,14 +8,15 @@ pip install --user argcomplete pyelftools
 
 # Download gnu-gcc-toolchain
 wget https://github.com/pulp-platform/pulp-riscv-gnu-toolchain/releases/download/v1.0.16/v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2
-tar -xf v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2 v1.0.16-pulp-riscv-gcc-ubuntu-18
+tar -xf v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2 -C ./
+mv v1.0.16-pulp-riscv-gcc-ubuntu-18/ pulp-riscv-gcc-toolchain/
 rm -rf v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2
 
 # Build pulp-sdk
-cd v1.0.16-pulp-riscv-gcc-ubuntu-18
+cd pulp-riscv-gcc-toolchain
 source sourceme.sh
 cd ..
-USR_PATH=$(pwd)/v1.0.16-pulp-riscv-gcc-ubuntu-18
+USR_PATH=$(pwd)/pulp-riscv-gcc-toolchain
 export PULP_RISCV_GCC_TOOLCHAIN=$USR_PATH
 export PATH=$USR_PATH/bin:$PATH
 cd pulp-sdk/
