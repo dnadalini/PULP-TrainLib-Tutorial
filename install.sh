@@ -15,7 +15,8 @@ rm -rf v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2
 cd v1.0.16-pulp-riscv-gcc-ubuntu-18
 source sourceme.sh
 cd ..
-export PULP_RISCV_GCC_TOOLCHAIN=$(pwd)/v1.0.16-pulp-riscv-gcc-ubuntu-18
+USR_PATH=$(pwd)/v1.0.16-pulp-riscv-gcc-ubuntu-18
+export PULP_RISCV_GCC_TOOLCHAIN=$USR_PATH
 export PATH=$USR_PATH/bin:$PATH
 cd pulp-sdk/
 source configs/pulp-open.sh
