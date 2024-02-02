@@ -8,9 +8,7 @@ pip install --user argcomplete pyelftools
 
 # Download gnu-gcc-toolchain
 git clone git@github.com:dnadalini/riscv-gcc-toolchain-ubuntu22.git
-cp riscv-gcc-toolchain-ubuntu22/pulp-riscv-gcc-toolchain-ubuntu22.tar.gz ./
-tar -xvf pulp-riscv-gcc-toolchain-ubuntu22.tar.gz -C ./
-rm pulp-riscv-gcc-toolchain-ubuntu22.tar.gz
+cp -r riscv-gcc-toolchain-ubuntu22/pulp-riscv-gcc-toolchain ./
 
 # Set up GCC version 9.4.0
 sudo apt-get update -y && \
