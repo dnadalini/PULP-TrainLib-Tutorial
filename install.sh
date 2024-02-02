@@ -21,6 +21,7 @@ export PATH=$USR_PATH/bin:$PATH
 cd pulp-sdk/
 source configs/pulp-open.sh
 make build
+cd ..
 
 # Download dependencies for pulp-trainlib
 python -m pip install argparse 
