@@ -30,4 +30,10 @@ python -m pip install argparse
 python -m pip install install torch torchvision torchaudio
 python -m pip install torchsummary
 
+# Checkout the correct version of PULP-TrainLib
+cd pulp-trainlib
+git pull origin
+git checkout trainlib-tutorial
+cd ..
+
 echo "Setup successful!"
