@@ -18,6 +18,7 @@ In this tutorial, we will generate and validate a simple three-layer DNN, compos
 With a terminal open in this repository root folder (PULP-TrainLib-Tutorial/) run the TrainLib_Deployer:
 
 ```
+conda activate trainlib-tutorial
 cd pulp-trainlib/tools/TrainLib_Deployer
 python TrainLib_Deployer.py
 ```
@@ -25,12 +26,13 @@ python TrainLib_Deployer.py
 This will generate the code in `Ex01-TrainLib_Deployer/CNN_FP32/`, as specified in the options. Then, setup the environment with:
 
 ```
+cd ../../..
 source setup.sh
 ```
 Now, the terminal is ready to compile the generated code. Let's:
 
 ```
-cd ../../../Ex01-TrainLib_Deployer/CNN_FP32/
+cd Ex01-TrainLib_Deployer/CNN_FP32/
 make clean get_golden all run
 ```
 

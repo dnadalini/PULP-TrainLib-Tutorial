@@ -1,6 +1,8 @@
 #!/bin/bash
 echo "Beginning setup.."
 git submodule update --init --recursive
+conda create --name trainlib-tutorial
+conda activate trainlib-tutorial
 
 # Download dependencies for pulp-sdk
 sudo apt-get install -y build-essential git libftdi-dev libftdi1 doxygen python3-pip libsdl2-dev curl cmake libusb-1.0-0-dev scons gtkwave libsndfile1-dev rsync autoconf automake texinfo libtool pkg-config libsdl2-ttf-dev
