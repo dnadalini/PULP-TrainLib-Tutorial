@@ -17,6 +17,8 @@ On other setups, we do not provide any guatantee.
 To install all the components required by PULP-TrainLib, simply:
 - source install_ub18.sh
 
+Then, close the installation terminal and open a new one.
+
 An experimental setup for Ubuntu 22 is provided, but not guarantee to work.
 
 ## Executing tests of PULP-TrainLib

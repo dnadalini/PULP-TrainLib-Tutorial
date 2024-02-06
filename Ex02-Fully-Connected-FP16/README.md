@@ -4,7 +4,7 @@ In this second tutorial, we dig down into the primitives of PULP-TrainLib, to se
 
 `Single core optimizations on a fully-connected layer: see that with a different MatMul you can optimize more.`
 
-## "Everything as a Matrix Multiplication"
+## "Everything is a Matrix Multiplication"
 
 Almost every computational layer of CNNs can be visualized and computed as a matrix multiplication of suitably reshaped tensors. In case of a Fully-Connected Layer, each training step can be represented as follows:
 
