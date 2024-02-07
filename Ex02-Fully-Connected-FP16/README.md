@@ -1,18 +1,22 @@
 # Optimizing On-Device Learning primitives
 
-In this second tutorial, we dig down into the primitives of PULP-TrainLib, to see how to optimize the inner kernels.
+This tutorial aims at showing the core optimizations to build fast hardware-aware computational kernels on RISC-V Multicore MCUs.
 
 `Single core optimizations on a fully-connected layer: see that with a different MatMul you can optimize more.`
 
 ## "Everything is a Matrix Multiplication"
 
-Almost every computational layer of CNNs can be visualized and computed as a matrix multiplication of suitably reshaped tensors. In case of a Fully-Connected Layer, each training step can be represented as follows:
+Almost every computational layer of CNNs can be visualized and computed as a Matrix Multiplication (MM) between suitably reshaped tensors. In case of a Fully-Connected Layer, each training step can be represented as follows:
 
-![Fully-Connected](../img/fully-connected.png)
+![Fully-Connected](../img/FC_steps.png)
 
-## Hands on: optimizing the MatMul
+This way, the MM operator becomes the main computational core of 
+
+## Vectorizing MM kernels
 
 `USE test_linear/ TO VERIFY THE LATENCY IMPROVEMENT & TALK ABOUT THE LIMITATIONS IN CASE OF NON-BATCHED FULLY-CONNECTED LAYERS.`
+
+
 
 ## References
 
