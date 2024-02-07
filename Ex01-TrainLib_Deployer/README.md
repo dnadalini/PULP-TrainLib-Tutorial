@@ -196,15 +196,7 @@ Then, the code can be recompiled with:
 rm -rf BUILD/; make clean all run
 ``` 
 
-Parallelizing over multiple cores is managed by the function `pi_cl_team_fork(NUM_CORES, parallel_function, &args)`, which is widely used in PULP-TrainLib's kernels.
-
-Let's consider the case of a Fully-Connected Layer, where the core computational kernels can be expressed as Matrix Multiplication. Let's consider, for example, the Forward step:
-
-![FC_Forward](../img/FC_forward.png)
-
-One way to exploit parallelism is to distribute the computation of only 1/Nth of the rows the first matrix - i.e., the weights - to each core. Therefore, the computation of the output matrix - the layer's output - is split in different chunks that are obtained by each core.
-
-In this case, parallelization is not ideal, due to the limited sizes of the layers. However, the total cycles can be reduced by 4.65 times:
+As 8 Cores can be used for the computation, a maximum speedup of 8x can be expected. For this particular DNN, parallelization is not ideal, due to the small sizes of each layers' tensors. Indeed, the total cycles can be reduced by 4.65 times:
 
 ```
 [0] cycles = 736089     <= Cycles with 1 Core
@@ -212,5 +204,60 @@ In this case, parallelization is not ideal, due to the limited sizes of the laye
 PARALLEL SPEEDUP: 736089 / 158376 = 4.65
 ``` 
 
+To understand how PULP-TrainLib implements parallelism, let's consider the case of a Fully-Connected Layer, whose, e.g., Forward Step can be expressed as Matrix Multiplication:
 
+![FC_Forward](../img/FC_forward.png)
 
+One way to exploit parallelism is to distribute the computation of only 1/Nth of the rows the first matrix - i.e., the weights - to each core. The output matrix - the layer's output - is computed as different chunks, distributed over the available cores, which share the second operand. All the chunks are computed at the same time, leading to a teoretical speedup equal to the number of available cores (8 in this case).
+
+In PULP architectures, parallelization is managed by the function `pi_cl_team_fork(NUM_CORES, parallel_function, &args)`, which forks the computation of a `parallel_function` over the available cores. In the considered case (see [pulp_linear_fp32.c](../pulp-trainlib/lib/sources/pulp_linear_fp32.c), `pulp_linear_fp32_fw_cl()`), parallelization is cast as:
+
+```C
+// Define stucture to wrap Matrix Multiplication (MM)
+struct matMul_args matMul_args;
+// Fill fields with operands
+matMul_args.A = coeffData;              // First matrix
+matMul_args.B = inputData;              // Second matrix
+matMul_args.C = outData;                // Output matrix
+matMul_args.N = FC_args->output->dim;   // Rows of the first matrix
+matMul_args.K = FC_args->input->dim;    // Columns of the first / rows of the second
+matMul_args.M = 1;                      // Rows of the second matrix
+
+// Parallelize the MM over NUM_CORES (defined in Makefile as 8)
+pi_cl_team_fork(NUM_CORES, mm, &matMul_args);
+```
+
+Internally, the Matrix Multiplication kernel (see [pulp_matmul_fp32.c](../pulp-trainlib/lib/sources/pulp_matmul_fp32.c), `mm()`) is set to automatically recognize and compute its own chunk as soon as the funtion is executed by a Core:
+
+```C
+void mm(void * matMul_args) 
+{
+  // Set up the argsuments
+  struct matMul_args* args = (struct matMul_args *)matMul_args;
+  float * __restrict__ A = args->A;
+  float * __restrict__ B = args->B;
+  float * __restrict__ C = args->C;
+  const uint32_t N = args->N;
+  const uint32_t M = args->M;
+  const uint32_t K = args->K;
+
+  // Detect the chunk depending on the Core that executes
+  const uint32_t blockSize = (N+NUM_CORES-1) / NUM_CORES;
+  const uint32_t start = pi_core_id()*blockSize;
+  const uint32_t stop = start+blockSize > N ? N : start+blockSize;
+
+  // Perform partial Matrix Multiplication
+  for (uint32_t i=start; i < stop; i++) 
+  {
+    for (uint32_t j = 0; j < M; j++) 
+    {
+      float temp = 0;
+      for (uint32_t k = 0; k < K; k++) 
+      {
+        temp += A[i*K+k] * B[j+k*M];
+      } 
+      C[i*M+j] = temp;
+    } 
+  }   
+}
+```
