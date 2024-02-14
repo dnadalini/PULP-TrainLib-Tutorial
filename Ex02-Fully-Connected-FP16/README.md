@@ -10,13 +10,15 @@ Most of the computational layers of CNNs can be visualized and executed as a Mat
 
 In this representation, the weight tensor, the input data, and the output gradient are used to compute the output and the weight and input gradients of the Fully-Connected layer. 
 
-## Optimizing MM with FP16 SIMD 
+## Optimizing Matrix-vector with FP16 SIMD 
 
 `Show how the reshape + SIMD can be used to speed up the computation.`
 
 ![MM_vs_MMT](../img/MM_vs_MMT.png)
 
-## Hands on: optimizing a MM kernel
+Specializzare per il caso di UN training step in cui si usa una determinata operazione matvec.
+
+## Hands on: optimizing a Matvec kernel
 
 ```
 Here we should provide an extra test for THIS tutorial to show how we can improve the performances of MM using the previous insights (simple case).
