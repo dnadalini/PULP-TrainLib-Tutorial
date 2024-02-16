@@ -67,7 +67,7 @@ Layer 2 output:        _
 0.000048                |
 -0.000030               |
 0.000024                \
--0.000081                \  DNN Output before ODL
+....                     \  DNN Output before ODL
 0.000009                 /  
 0.000061                /
 -0.000025               |
@@ -75,13 +75,13 @@ Layer 2 output:        _
 -0.000006              _|
 
                                 --- STATISTICS FROM CLUSTER CORE 0  ---
-[0] cycles = 149070             <= Cycles to execute the program (LATENCY)
-[0] instr = 114528              <= Number of instructions
-[0] active cycles = 149080      <= Number of active cycles
+[0] cycles = 750474             <= Cycles to execute the program (LATENCY)
+[0] instr = 579014              <= Number of instructions
+[0] active cycles = 750506      <= Number of active cycles
 [0] ext load = 13               <= Direct loads from L2
 [0] TCDM cont = 0               <= Memory contentions in L1
-[0] ld stall = 29954            <= Stalls while loading data
-[0] imiss = 1782                <= Instruction cache misses
+[0] ld stall = 164539           <= Stalls while loading data
+[0] imiss = 1793                <= Instruction cache misses
 Checking updated output..
 
 Layer 2 output:        _
@@ -89,7 +89,7 @@ Layer 2 output:        _
 0.000048                |
 -0.000030               |
 0.000024                \
--0.000081                \  DNN Output AFTER ODL
+...                      \  DNN Output AFTER ODL
 0.000009                 / 
 0.000061                /
 -0.000025               |
@@ -213,7 +213,7 @@ void net_step()
 
 ## Latency of the ODL operations
 
-In the previous section, we noticed a latency of `[0] cycles = 149070` while executing a single forward-loss-backward-update steps on a single RISC-V core on the PULP Cluster.
+In the previous section, we noticed a latency of `[0] cycles = 750474` while executing a single forward-loss-backward-update steps on a single RISC-V core on the PULP Cluster.
 
 The latency of a single online learning step can be broken down into the single components by profiling the single components with PULP's performance counters. To profile the execution of a piece of code on PULP, we can use the functions defined in [stats.h](CNN_FP32/stats.h). For example, if we want to profile the backward:
 
@@ -246,19 +246,19 @@ void net_step()
 Back to the previous example, the latency can be broken down as:
 
 ```
-Forward Step:   57458 
-    Conv2D:     42878
-    ReLU:       2746
-    Linear:     12060
+Forward Step:   273443 
+    Conv2D:     192654 
+    ReLU:       5489 
+    Linear:     74873 
 
-Loss:           318
+Loss:           582 
 
-Backward Step:  75566
-    Linear:     30370
-    ReLU:       3265
-    Conv2D:     41972
+Backward Step:  379667 
+    Linear:     174313 
+    ReLU:       6412
+    Conv2D:     198747 
 
-Weight Update:  15820
+Weight Update:  98227
 ```
 
 Note that the latency of the Linear's backward step takes 2.5 times to execute with respect to the forward: this is due to the computation of both `pulp_linear_fp32_bw_param_grads_cl()`, computing the weight gradient, and `pulp_linear_fp32_bw_input_grads_cl()`, computing the input gradient, which are executed in sequence by `pulp_linear_fp32_bw_cl()`. Otherwise, being the first layer, the Conv2D layer feaures similar latency (`pulp_conv2d_fp32_bw_cl()` skips `pulp_conv2d_fp32_bw_input_grads_cl()`).
@@ -277,30 +277,30 @@ Then, the code can be recompiled with:
 rm -rf BUILD/; make clean all run
 ``` 
 
-As 8 Cores can be used for the computation, a maximum speedup of 8x can be expected. For this particular DNN, parallelization is not ideal, due to the small sizes of each layers' tensors. Indeed, the total cycles can be reduced by 5.35 times:
+As 8 Cores can be used for the computation, a maximum speedup of 8x can be expected. For this particular DNN, parallelization is not ideal, due to the small sizes of each layers' tensors. Indeed, the total cycles can be reduced by 6.97 times:
 
 ```
-[0] cycles = 149070     <= Cycles with 1 Core
-[0] cycles = 27840      <= Cycles with 8 Cores
-PARALLEL SPEEDUP: 149070 / 27840 = 5.35 x
+[0] cycles = 750474     <= Cycles with 1 Core
+[0] cycles = 107639     <= Cycles with 8 Cores
+PARALLEL SPEEDUP: 750474 / 107639 = 6.97 x
 ```
 
 Looking at the single components and indicating on the left the cycles on 1 core, and on the right the ones on 8 cores, we find that:
 
 ```
-Forward Step:   57458 / 11418   = 5.03 x
-    Conv2D:     42878 / 8060    = 5.31 x
-    ReLU:       2746 / 550      = 4.99 x
-    Linear:     12060 / 3169    = 3.81 x
+Forward Step:   273443 / 39618    = 6.90 x
+    Conv2D:     192654 / 28157    = 6.84 x
+    ReLU:       5489 / 929        = 5.91 x
+    Linear:     74873 / 11882     = 6.30 x
 
-Loss:           318 / 318       = 1 x
+Loss:           582 / 593         = 0.98 x  (not parallel)
 
-Backward Step:  75566 / 13884   = 5.44 x
-    Linear:     30370 / 5487    = 5.53 x
-    ReLU:       3265 / 622      = 5.25 x
-    Conv2D:     41972 / 7914    = 5.30 x 
+Backward Step:  379667 / 53830    = 7.05 x
+    Linear:     174313 / 23861    = 7.31 x
+    ReLU:       6412 / 1008       = 6.36 x
+    Conv2D:     198747 / 29131    = 6.82 x 
 
-Weight Update:  15820 / 2224    = 7.11 x
+Weight Update:  98227 / 12568     = 7.81 x
 ```
 
 The overall effect on the parallelization depends on the single components of each step, according to the Ahmdal's Law.
