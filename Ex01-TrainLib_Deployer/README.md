@@ -305,6 +305,12 @@ Weight Update:  15820 / 2224    = 7.11 x
 
 The overall effect on the parallelization depends on the single components of each step, according to the Ahmdal's Law.
 
+
+```
+EXPLAIN THE WHY OF BLAS OPERATORS
+```
+
+
 To understand how PULP-TrainLib implements parallelism, let's consider the case of a Fully-Connected Layer, whose, e.g., Forward Step can be expressed as Matrix Multiplication:
 
 ![FC_Forward](../img/FC_forward.png)

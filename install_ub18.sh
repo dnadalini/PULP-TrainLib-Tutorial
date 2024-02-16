@@ -38,4 +38,10 @@ git pull origin
 git checkout trainlib-tutorial
 cd ..
 
+# Setup GVSoC's memory for this tutorial (set L1 to 256 kB)
+rm pulp-sdk/rtos/pulpos/pulp/kernel/chips/pulp/link.ld
+cp img/link.ld pulp-sdk/rtos/pulpos/pulp/kernel/chips/pulp/
+rm pulp-sdk/tools/gap-configs/configs/chips/pulp/pulp.json
+cp img/pulp.json pulp-sdk/tools/gap-configs/configs/chips/pulp/
+
 echo "Setup successful!"
