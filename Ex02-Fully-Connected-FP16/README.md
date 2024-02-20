@@ -2,88 +2,136 @@
 
 This tutorial aims at showing the core optimizations to build fast hardware-aware computational kernels on RISC-V Multicore MCUs. To understand the basics, let's consider a Fully-Connected layer.
 
-## "Everything is a Matrix Multiplication"
+## Matrix Representation of ODL Layers
 
 Most of the computational layers of CNNs can be visualized and executed as a Matrix Multiplication (MM) between suitably reshaped tensors. In case of a Fully-Connected Layer, each training step can be represented as follows:
 
 ![Fully-Connected](../img/FC_steps.png)
 
-In this representation, the weight tensor, the input data, and the output gradient are used to compute the output and the weight and input gradients of the Fully-Connected layer. 
+In this representation, the weight tensor, the input data, and the output gradient are used to compute the output and the weight and input gradients of the Fully-Connected layer. In particular, the weights of the Fully-Connected layer can be stored as a matrix of size `Cout x Cin`, while the input and output activations are of size `1 x Cin` and `1 x Cout`, respectively. 
 
 ## Optimizing Matrix-vector with FP16 SIMD 
 
-`Show how the reshape + SIMD can be used to speed up the computation.`
+In case the MCU is equipped with SIMD units with Reduced Precision (e.g., vectorized FP16), the data layout can be exploited to speed up the computation. In particular, both `load` and `multiply-and-accumulate (mac)` instructions can be used in their vectorized form to reduce the total number of instructions to compute a linear algebra operator, e.g., a Matrix Multiplication. This can be performed by `loading two adjacent elements from a single tensor` and by `multiplying couples of elements with a single instruction`.
 
-![MM_vs_MMT](../img/MM_vs_MMT.png)
+`Insert here a picture of a SIMD unit to explain how to efficiently use it.`
 
-Specializzare per il caso di UN training step in cui si usa una determinata operazione matvec.
+As a starting point, let's consider the Input Gradient step of a Fully-Connected Layer. By considering the previously presented expressions, this step can be represented as the `vector-matrix` multiplication of the `Output Gradient (O)` and the `Weights (W)`, to compute the `Input Gradient (I)`. In the following figure, the left part presents the naive implementation of said step. When looking at the memory, tensors are represented as 1-D arrays, where adjacent elements belong to the same row, while adjacent column elements feature a stride which is equal to the row length of the corresponding matrix. 
 
-## Hands on: optimizing a Matvec kernel
+When performing a vector-matrix multiplication, the naive version of the operator, using SIMD, should:
+- load 2 adjacent elements of O as a vector;
+- load 2 separate single elements of W;
+- multiply the single elements of O by the single elements of W;
+- accumulate over the results by summing the previous partial products.
 
-```
-Here we should provide an extra test for THIS tutorial to show how we can improve the performances of MM using the previous insights (simple case).
+The `non-adjacent position of the elements of W`, as well as the `non-vectorized mac` instructions represent a non-ideal execution pattern. 
 
-Example:
-- We design a 1x1 MM with the second matrix transposed and see the performance improvement coming from a vectorized MM. In this case, no data reuse needs to be explained
-```
+![](../img/MM_MMT_new.png)
+
+The previous operation can be efficiently executed, instead, by introducing two simple changes:
+- the `W matrix is stored as transposed`;
+- the vector-matrix operation is performed `row-by-row`, instead of `row-by-column`.
+
+The resulting operation is depicted on the right of the figure. In this case, `both the O and the W are loaded as vectors` and the `2 mac instructions are executed as a single SIMD instruction`. The accumulation is performed as in the previous case. 
+
+As a result, the inner iteration of the linear algebra operator is brought to 3 instructions, from 5, reducing the total latency by 40%.
+
+
+
+## Example: optimizing a Matvec kernel
+
+The previously introduced concept can be implemented as a linear algebra operator in C code, starting from the naive expression of the `vector-matrix` multiplication:
 
 ```C
 void mm_naive (void * void_args) 
 {
     struct matMul_args_fp16 * args = (struct matMul_args_fp16 *) void_args;
-    fp16 * A = args->A; 
-    fp16 * B = args->B; 
-    fp16 * C = args->C; 
-    uint32_t N = args->N;  
+    fp16 * A = args->A;     // In this example, the Output Gradient
+    fp16 * B = args->B;     // In this example, the Weight matrix
+    fp16 * C = args->C;     // In this example, the Input Gradient
     uint32_t M = args->M; 
     uint32_t K = args->K;  
 
-    for (int i = 0; i < N; i++) 
+    for (int j = 0; j < M; j++) 
     {
-        for (int j = 0; j < M; j++) 
+        fp16 temp = 0;
+        for (int k = 0; k < K; k++) 
         {
-            float temp = 0;
-            for (int k = 0; k < K; k++) 
-            {
-                temp += A[i*K + k] * B[k*M + j];
-            }
-            C[i*M + j] = temp;
+            temp += A[k] * B[k*M + j];
         }
+        C[j] = temp;
     }
 }
 ```
 
-`Total estimated instructions: N*K*M*(2 ld + 1 mac) + N*M*(1 st) ~= 3*N*M*K + N*M`
+`Total estimated instructions: K*M*(2 ld + 1 mac) + M*(1 st) ~= 3*M*K + M`
+
+The naive vectorized expression can, then, be derived by performing vectorized loads of A, while the elements of B are loaded as in the previous case:
 
 ```C
-void mm_T_naive (void * void_args) 
+void mm_SIMD_naive (void * void_args) 
 {
     struct matMul_args_fp16 * args = (struct matMul_args_fp16 *) void_args;
-    fp16 * A = args->A; 
-    fp16 * B = args->B; 
-    fp16 * C = args->C; 
-    uint32_t N = args->N;  
+    fp16 * A = args->A;     // In this example, the Output Gradient
+    fp16 * B = args->B;     // In this example, the Weight matrix
+    fp16 * C = args->C;     // In this example, the Input Gradient
     uint32_t M = args->M; 
     uint32_t K = args->K;  
 
-    for (int i = 0; i < N; i++) 
+
+    for (int j = 0; j < M; j++) 
     {
-        for (int j = 0; j < M; j++) 
+        v2f16 temp = (v2f16) {0, 0};
+        for (int k = 0; k < K; k+=2) 
         {
-            v2f16 temp = (v2f16) {0, 0};
-            for (int k = 0; k < K; k+=2) 
-            {
-                v2f16 Av = *((v2f16*) &A[i*K + k]);
-                v2f16 Bv = *((v2f16*) &B[j*K + k]);
-                temp += Av * Bv;
-            }
-            C[i*M + j] = temp[0] + temp[1];
+            // Load vectorized A (2 adjacent elements)
+            v2f16 Av = *((v2f16*) &A[k]);
+            // Load non-adjacent B elements
+            temp[0] += Av[0] * B[k*M + j];
+            temp[1] += Av[1] * B[(k+1)*M + j];
         }
+        C[j] = temp[0] + temp[1];
     }
 }
 ```
-`Total estimated instructions: N*(K/2)*M*(2 ld + 1 mac) + N*M*(1 sum + 1 st) ~= (3/2)*M*N*K + 2*N*M`
 
+`Total estimated instructions: (K/2)*M*(3 ld + 2 mac) + M*(1 sum + 1 st) ~= (5/2)*K*M + 2*M`
+
+Then, the most optimized code can be obtained by considering the B matrix (the Weight Matrix) as already transposed in memory and performing a single vectorized mac:
+
+```C
+void mm_T (void * void_args) 
+{
+    struct matMul_args_fp16 * args = (struct matMul_args_fp16 *) void_args;
+    fp16 * A = args->A;     // In this example, the Output Gradient
+    fp16 * B = args->B;     // In this example, the Weight matrix
+    fp16 * C = args->C;     // In this example, the Input Gradient
+    uint32_t M = args->M; 
+    uint32_t K = args->K;  
+
+    for (int j = 0; j < M; j++) 
+    {
+        v2f16 temp = (v2f16) {0, 0};
+        for (int k = 0; k < K; k+=2) 
+        {
+            // Load both adjacent elements for A and B
+            v2f16 Av = *((v2f16*) &A[k]);
+            v2f16 Bv = *((v2f16*) &B[j*K + k]);
+            temp += Av * Bv;
+        }
+        C[j] = temp[0] + temp[1];
+    }
+}
+```
+`Total estimated instructions: (K/2)*M*(2 ld + 1 mac) + M*(1 sum + 1 st) ~= (3/2)*M*K + 2*M`
+
+## Implementation details: Fully-Connected Layer
+
+`Insert here the details for an implementation with the previous kernels`.
+
+## Fully-Connected Layer: performance comparison on PULP
+
+`Insert a custom test for the input gradient of the fully-connected to show the difference in performances between the naive, the non-transposed and the transposed form of the vector-matrix (in form of matrix multiplication on the backend)`.
 
 ## References
 
