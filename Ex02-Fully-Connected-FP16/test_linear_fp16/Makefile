@@ -5,8 +5,8 @@ IN_CH?=128
 OUT_CH?=128
 NUM_CORES?=1
 STEP?='BACKWARD_ERROR' # Possible steps: 'FORWARD', 'BACKWARD_GRAD', 'BACKWARD_ERROR'
-MATMUL_TYPE?=4
-TRANSPOSE_WEIGHTS?=1	# Choose if to save the weights as transposed or not
+MATMUL_TYPE?=0
+TRANSPOSE_WEIGHTS?=0	# Choose if to save the weights as transposed or not
 # End of user settings
 
 TRAIN_LIB=./lib
@@ -17,6 +17,7 @@ APP_SRCS += $(TRAIN_LIB_SRCS)/pulp_matmul_fp16.c
 APP_SRCS += $(TRAIN_LIB_SRCS)/pulp_linear_fp16.c
 APP_SRCS += $(TRAIN_LIB_SRCS)/pulp_losses_fp16.c
 APP_SRCS += $(TRAIN_LIB_SRCS)/pulp_train_utils_fp16.c
+APP_SRCS += $(TRAIN_LIB_SRCS)/pulp_vector_matrix_fp16.c
 
 DATA_TYPE?='fp16'
 APP_CFLAGS += -I. -I$(TRAIN_LIB)/include

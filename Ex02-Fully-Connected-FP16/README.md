@@ -43,7 +43,7 @@ As a result, the inner iteration of the linear algebra operator is brought to 3 
 The previously introduced concept can be implemented as a linear algebra operator in C code, starting from the naive expression of the `vector-matrix` multiplication:
 
 ```C
-void mm_naive (void * void_args) 
+void vm_naive (void * void_args) 
 {
     struct matMul_args_fp16 * args = (struct matMul_args_fp16 *) void_args;
     fp16 * A = args->A;     // In this example, the Output Gradient
@@ -69,7 +69,7 @@ void mm_naive (void * void_args)
 The naive vectorized expression can, then, be derived by performing vectorized loads of A, while the elements of B are loaded as in the previous case:
 
 ```C
-void mm_SIMD_naive (void * void_args) 
+void vm_SIMD_naive (void * void_args) 
 {
     struct matMul_args_fp16 * args = (struct matMul_args_fp16 *) void_args;
     fp16 * A = args->A;     // In this example, the Output Gradient
@@ -86,21 +86,26 @@ void mm_SIMD_naive (void * void_args)
         {
             // Load vectorized A (2 adjacent elements)
             v2f16 Av = *((v2f16*) &A[k]);
-            // Load non-adjacent B elements
-            temp[0] += Av[0] * B[k*M + j];
-            temp[1] += Av[1] * B[(k+1)*M + j];
+            // Load non-adjacent B elements and pack them
+            fp16 B0 = B[k*M + j];
+            fp16 B1 = B[(k+1)*M + j];
+            v2f16 Bv = (v2f16) {B0, B1};
+            // Multiply elementwise
+            temp += Av * Bv;
         }
         C[j] = temp[0] + temp[1];
     }
 }
 ```
 
-`Total estimated instructions: (K/2)*M*(3 ld + 2 mac) + M*(1 sum + 1 st) ~= (5/2)*K*M + 2*M`
+In this case, to multiply A and B elements in vectors of 2, the elements of B need to be loaded and packed. This is performed in the inner loop.
+
+`Total estimated instructions: (K/2)*M*(3 ld + 1 pack + 1 mac) + M*(1 sum + 1 st) ~= (5/2)*K*M + 2*M`
 
 Then, the most optimized code can be obtained by considering the B matrix (the Weight Matrix) as already transposed in memory and performing a single vectorized mac:
 
 ```C
-void mm_T (void * void_args) 
+void vm_T_SIMD (void * void_args) 
 {
     struct matMul_args_fp16 * args = (struct matMul_args_fp16 *) void_args;
     fp16 * A = args->A;     // In this example, the Output Gradient
@@ -125,13 +130,54 @@ void mm_T (void * void_args)
 ```
 `Total estimated instructions: (K/2)*M*(2 ld + 1 mac) + M*(1 sum + 1 st) ~= (3/2)*M*K + 2*M`
 
-## Implementation details: Fully-Connected Layer
+## Optimizing the Matrix Multiplication with SIMD
 
-`Insert here the details for an implementation with the previous kernels`.
+`Here insert the real code to optimize a matrix multiplication and comment it. Also, introduce the concepts of MM and MM_T, which are explained in the journal paper.`
 
-## Fully-Connected Layer: performance comparison on PULP
+## Optimizing a Fully-Connected Layer: Input Gradient Step
 
-`Insert a custom test for the input gradient of the fully-connected to show the difference in performances between the naive, the non-transposed and the transposed form of the vector-matrix (in form of matrix multiplication on the backend)`.
+Using the previous insights, the Input Gradient Step described above can be optimized by reducing by up to 40% the clock cycles to execute. The implemented functions can be found in [pulp_vector_matrix_fp16.h](./test_linear_fp16/lib/include/pulp_vector_matrix_fp16.h) and [pulp_vector_matrix_fp16.c](./test_linear_fp16/lib/sources/pulp_vector_matrix_fp16.c). In the following tests, a Fully-Connected Layer with input feature size of 128, output feature size of 128 and weights of size 128x128 is analyzed. To see the effects of this optimization, let's run a test. First, `source ../setup.sh`. Then:
+
+```
+cd test_linear_fp16/
+make clean get_golden all run MATMUL_TYPE=0 TRANSPOSE_WEIGHTS=0
+```
+
+This first command launches the Input Gradient Step of the Fully-Connected with the naive Matrix Multiplication algorithm (like `mm_naive`). Therefore, no vectorization is introduced. In this case, we obtain:
+
+```
+--- mm_naive ---
+Estimated Cycles:   3*M*K + M = 49280
+Measured Cycles:                67386 
+```
+
+The second command launches the Input Gradient Step of the Fully-Connected with the naive SIMD Matrix Multiplication algorithm (like `mm_SIMD_naive`). 
+```
+make clean get_golden all run MATMUL_TYPE=1 TRANSPOSE_WEIGHTS=0
+```
+
+In this case, we obtain:
+
+```
+--- mm_SIMD_naive ---
+Estimated Cycles:   (5/2)*K*M + 2*M = 41216
+Measured Cycles:                      43611
+```
+
+The third command launches the Input Gradient Step of the Fully-Connected with the naive SIMD Matrix Multiplication algorithm (like `mm_T_SIMD`). 
+
+```
+make clean get_golden all run MATMUL_TYPE=2 TRANSPOSE_WEIGHTS=1
+```
+
+In this case, we obtain:
+
+```
+--- mm_T_SIMD ---
+Estimated Cycles:   (3/2)*M*K + 2*M = 24832
+Measured Cycles:                      35268
+```
+
 
 ## References
 

@@ -21,6 +21,7 @@
 #include "pulp_train_utils_fp16.h"
 #include "pulp_matmul_fp16.h"
 #include "pulp_linear_fp16.h"
+#include "pulp_vector_matrix_fp16.h"
 
 void pulp_linear_fp16_fw_cl( void * Linear_args_fp16 )
 {
@@ -129,6 +130,17 @@ void pulp_linear_fp16_bw_input_grads_cl( void * Linear_args_fp16 )
 
   #ifndef OPTIMIZE
   pi_cl_team_fork(NUM_CORES, mm_M_fp16, &matMul_args);
+  // CODE FOR TUTORIAL PURPOSES
+  #else
+    #if MATMUL_TYPE == 0
+    vm_naive(&matMul_args);
+    #elif MATMUL_TYPE == 1
+    vm_SIMD_naive(&matMul_args);
+    #elif MATMUL_TYPE == 2
+    vm_T_SIMD(&matMul_args);
+    #endif
+  #endif
+  /** USUAL CODE
   #else
   struct mm_manager_args_fp16 man_args;
   man_args.mm_args = &matMul_args;
@@ -137,4 +149,5 @@ void pulp_linear_fp16_bw_input_grads_cl( void * Linear_args_fp16 )
   man_args.matmul_type = opt_matmul_type; //MATMUL_TYPE;
   pi_cl_team_fork(NUM_CORES, mm_manager_fp16, &man_args);
   #endif
+  */
 }
