@@ -305,17 +305,17 @@ Weight Update:  98227 / 12568     = 7.81 x
 
 The overall effect on the parallelization depends on the single components of each step, according to the Ahmdal's Law.
 
+Most of the training primitives of computational layers of Deep Neural Networks can be implemented by means of linear algebra operators between tensor data. In the case of a Fully-Connected Layer, for example, the matrix-vector expressions of the Forward, Weight Gradient and Input Gradient can be represented as follows:
 
-```
-EXPLAIN THE WHY OF BLAS OPERATORS
-```
+![FC_Steps](../img/FC_steps.png)
 
+In particular, the input and output tensors can be represented as vectors of size `Cin` and `Cout`, respectively, while the weights like a matrix of size `Cout * Cin`. During each step, the resulting tensor is computed as a vector-matrix or vector-vector operation. 
 
 To understand how PULP-TrainLib implements parallelism, let's consider the case of a Fully-Connected Layer, whose, e.g., Forward Step can be expressed as Matrix Multiplication:
 
 ![FC_Forward](../img/FC_forward.png)
 
-One way to exploit parallelism is to distribute the computation of only 1/Nth of the rows the first matrix - i.e., the weights - to each core. The output matrix - the layer's output - is computed as different chunks, distributed over the available cores, which share the second operand. All the chunks are computed at the same time, leading to a teoretical speedup equal to the number of available cores (8 in this case).
+One way to exploit parallelism is to distribute the computation of only 1/Nth of the rows the first matrix - i.e., the weights - to each core. The output tensor - the layer's output - is computed as different chunks, distributed over the available cores, which share the second operand. All the chunks are computed at the same time, leading to a teoretical speedup equal to the number of available cores (8 in this case).
 
 In PULP architectures, parallelization is managed by the function `pi_cl_team_fork(NUM_CORES, parallel_function, &args)`, which forks the computation of a `parallel_function` over the available cores. In the considered case (see [pulp_linear_fp32.c](../pulp-trainlib/lib/sources/pulp_linear_fp32.c), `pulp_linear_fp32_fw_cl()`), parallelization is cast as:
 

@@ -14,7 +14,7 @@ In this representation, the weight tensor, the input data, and the output gradie
 
 In case the MCU is equipped with SIMD units with Reduced Precision (e.g., vectorized FP16), the data layout can be exploited to speed up the computation. In particular, both `load` and `multiply-and-accumulate (mac)` instructions can be used in their vectorized form to reduce the total number of instructions to compute a linear algebra operator, e.g., a Matrix Multiplication. This can be performed by `loading two adjacent elements from a single tensor` and by `multiplying couples of elements with a single instruction`.
 
-`Insert here a picture of a SIMD unit to explain how to efficiently use it.`
+`Insert here a picture of a SIMD unit and comment it.`
 
 As a starting point, let's consider the Input Gradient step of a Fully-Connected Layer. By considering the previously presented expressions, this step can be represented as the `vector-matrix` multiplication of the `Output Gradient (O)` and the `Weights (W)`, to compute the `Input Gradient (I)`. In the following figure, the left part presents the naive implementation of said step. When looking at the memory, tensors are represented as 1-D arrays, where adjacent elements belong to the same row, while adjacent column elements feature a stride which is equal to the row length of the corresponding matrix. 
 
@@ -130,10 +130,6 @@ void vm_T_SIMD (void * void_args)
 ```
 `Total estimated instructions: (K/2)*M*(2 ld + 1 mac) + M*(1 sum + 1 st) ~= (3/2)*M*K + 2*M`
 
-## Optimizing the Matrix Multiplication with SIMD
-
-`Here insert the real code to optimize a matrix multiplication and comment it. Also, introduce the concepts of MM and MM_T, which are explained in the journal paper.`
-
 ## Optimizing a Fully-Connected Layer: Input Gradient Step
 
 Using the previous insights, the Input Gradient Step described above can be optimized by reducing by up to 40% the clock cycles to execute. The implemented functions can be found in [pulp_vector_matrix_fp16.h](./test_linear_fp16/lib/include/pulp_vector_matrix_fp16.h) and [pulp_vector_matrix_fp16.c](./test_linear_fp16/lib/sources/pulp_vector_matrix_fp16.c). In the following tests, a Fully-Connected Layer with input feature size of 128, output feature size of 128 and weights of size 128x128 is analyzed. To see the effects of this optimization, let's run a test. First, `source ../setup.sh`. Then:
@@ -143,10 +139,10 @@ cd test_linear_fp16/
 make clean get_golden all run MATMUL_TYPE=0 TRANSPOSE_WEIGHTS=0
 ```
 
-This first command launches the Input Gradient Step of the Fully-Connected with the naive Matrix Multiplication algorithm (like `mm_naive`). Therefore, no vectorization is introduced. In this case, we obtain:
+This first command launches the Input Gradient Step of the Fully-Connected with the naive Matrix Multiplication algorithm (like `vm_naive`). Therefore, no vectorization is introduced. In this case, we obtain:
 
 ```
---- mm_naive ---
+--- vm_naive ---
 Estimated Cycles:   3*M*K + M = 49280
 Measured Cycles:                67386 
 ```
@@ -159,7 +155,7 @@ make clean get_golden all run MATMUL_TYPE=1 TRANSPOSE_WEIGHTS=0
 In this case, we obtain:
 
 ```
---- mm_SIMD_naive ---
+--- vm_SIMD_naive ---
 Estimated Cycles:   (5/2)*K*M + 2*M = 41216
 Measured Cycles:                      43611
 ```
@@ -173,11 +169,10 @@ make clean get_golden all run MATMUL_TYPE=2 TRANSPOSE_WEIGHTS=1
 In this case, we obtain:
 
 ```
---- mm_T_SIMD ---
+--- vm_T_SIMD ---
 Estimated Cycles:   (3/2)*M*K + 2*M = 24832
 Measured Cycles:                      35268
 ```
-
 
 ## References
 
