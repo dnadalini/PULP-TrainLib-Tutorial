@@ -1,12 +1,15 @@
 #!/bin/bash
 echo "Beginning setup.."
-git submodule update --init --recursive
-conda create --name trainlib-tutorial
-conda activate trainlib-tutorial
-
+# General setup
+sudo apt-get update
+sudo apt-get install -y make python-is-python3
 # Download dependencies for pulp-sdk
 sudo apt-get install -y build-essential git libftdi-dev libftdi1 doxygen python3-pip libsdl2-dev curl cmake libusb-1.0-0-dev scons gtkwave libsndfile1-dev rsync autoconf automake texinfo libtool pkg-config libsdl2-ttf-dev
 pip install --user argcomplete pyelftools
+
+git submodule update --init --recursive
+conda create --name trainlib-tutorial
+conda activate trainlib-tutorial
 
 # Download gnu-gcc-toolchain
 wget https://github.com/pulp-platform/pulp-riscv-gnu-toolchain/releases/download/v1.0.16/v1.0.16-pulp-riscv-gcc-ubuntu-18.tar.bz2
