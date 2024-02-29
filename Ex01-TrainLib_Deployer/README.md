@@ -9,17 +9,17 @@ At the end of this tutorial you will learn how to:
 - understand and edit ODL code on MCUs
 - parallelize you core on the PULP Cluster
 
-First, we will modify the `USER SECTION` of [TrainLib_Deployer](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py) to generate the code for a CNN, deployed with FP32 computations.
-
 ## Defining or importing your CNN
 
-NOTE: THE WAY TO GENERATE THE NETWORK SHOULD BE CHANGED (CRISTI + ME)
-
-To generate this example, first overwrite the corresponding lines of [TrainLib_Deployer](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py) with the content of [CNN_FP32.txt](CNN_FP32.txt).
+TrainLib_Deployer is a code generator tool for On-Device Learning on PULP SoC's. The definition of the DNN graph is manually provided by the user as part of the `USER SECTION` of [TrainLib_Deployer](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py), where several parameters, as the properties of the layers, the amount of computational cores and working memory, can be selected by the user.
 
 In this tutorial, we will generate and validate a simple three-layer DNN, composed as follows:
 
 ![DNN](../img/DNN.png)
+
+To do so, TrainLib_Deployer can be set up as shown in [TrainLib_Deployer.py](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py). Launching the Deployer will generate a project folder in the specified path, where a copy of pulp-trainlib, the application code and a reference PyTorch-based reference model (or Golden Model) will be generated for your On-Device Learning application. 
+
+In this tutorial, the generated code will be placed under `./CNN_FP32/`, in the current directory.
 
 ## Generate a FP32 CNN
 
