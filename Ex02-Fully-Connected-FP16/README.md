@@ -1,6 +1,13 @@
 # Optimizing On-Device Learning primitives
 
-This tutorial aims at showing the core optimizations to build fast hardware-aware computational kernels on RISC-V Multicore MCUs. To understand the basics, let's consider a Fully-Connected layer.
+This tutorial presents the core optimizations that can be employed to build fast hardware-aware computational kernels on RISC-V Multicore MCUs. 
+
+With this tutorial you will learn:
+- how to consider the matrix expressions of a
+- how to optimize a linear algebra operator with FP16 SIMD
+- 
+
+To understand these concepts, let's consider a Fully-Connected layer.
 
 ## Matrix Representation of ODL Layers
 
@@ -8,33 +15,32 @@ Most of the computational layers of CNNs can be visualized and executed as a Mat
 
 ![Fully-Connected](../img/FC_steps.png)
 
-In this representation, the weight tensor, the input data, and the output gradient are used to compute the output and the weight and input gradients of the Fully-Connected layer. In particular, the weights of the Fully-Connected layer can be stored as a matrix of size `Cout x Cin`, while the input and output activations are of size `1 x Cin` and `1 x Cout`, respectively. 
+In this representation, the weight tensor, the input data, and the output gradient are used to compute the output, the weight gradient and the input gradient of the Fully-Connected layer. In particular, the weights of the Fully-Connected layer can be stored as a matrix of size `Cout x Cin`, while the input and output activations are of size `1 x Cin` and `1 x Cout`, respectively. 
 
-## Optimizing Matrix-vector with FP16 SIMD 
+## Optimizing a Vector-Matrix operator with FP16 SIMD 
 
 In case the MCU is equipped with SIMD units with Reduced Precision (e.g., vectorized FP16), the data layout can be exploited to speed up the computation. In particular, both `load` and `multiply-and-accumulate (mac)` instructions can be used in their vectorized form to reduce the total number of instructions to compute a linear algebra operator, e.g., a Matrix Multiplication. This can be performed by `loading two adjacent elements from a single tensor` and by `multiplying couples of elements with a single instruction`.
 
-`Insert here a picture of a SIMD unit and comment it.`
-
-As a starting point, let's consider the Input Gradient step of a Fully-Connected Layer. By considering the previously presented expressions, this step can be represented as the `vector-matrix` multiplication of the `Output Gradient (O)` and the `Weights (W)`, to compute the `Input Gradient (I)`. In the following figure, the left part presents the naive implementation of said step. When looking at the memory, tensors are represented as 1-D arrays, where adjacent elements belong to the same row, while adjacent column elements feature a stride which is equal to the row length of the corresponding matrix. 
+As a starting point, let's consider the Input Gradient step of a Fully-Connected Layer. By considering the previously presented expressions, this step can be represented as the `vector-matrix` multiplication of the `Output Gradient (O)` and the `Weights (W)`, to compute the `Input Gradient (I)`. In the following figure, the left part presents the naive implementation of said step. When looking at the memory, tensors are represented as 1-D arrays, where adjacent elements belong to the same row, while successive column elements feature a stride which is equal to the row length of the corresponding matrix. 
 
 When performing a vector-matrix multiplication, the naive version of the operator, using SIMD, should:
 - load 2 adjacent elements of O as a vector;
-- load 2 separate single elements of W;
-- multiply the single elements of O by the single elements of W;
+- load 2 separate single column elements of W;
+- pack the elements of W in a vector of 2 elements;
+- multiply the vectorized O and W;
 - accumulate over the results by summing the previous partial products.
 
-The `non-adjacent position of the elements of W`, as well as the `non-vectorized mac` instructions represent a non-ideal execution pattern. 
+The `non-adjacent position of the elements of W`, as well as the `pack` instructions represent a non-ideal execution pattern. 
 
 ![](../img/MM_MMT_new.png)
 
-The previous operation can be efficiently executed, instead, by introducing two simple changes:
+The previous operation can be optimized by introducing two simple changes:
 - the `W matrix is stored as transposed`;
 - the vector-matrix operation is performed `row-by-row`, instead of `row-by-column`.
 
-The resulting operation is depicted on the right of the figure. In this case, `both the O and the W are loaded as vectors` and the `2 mac instructions are executed as a single SIMD instruction`. The accumulation is performed as in the previous case. 
+The resulting operation is depicted on the right of the figure. In this case, `both the O and the W are loaded as vectors` and the `2 mac instructions are executed as a single SIMD instruction`. No pack instruction is used. The accumulation is performed as in the previous case. 
 
-As a result, the inner iteration of the linear algebra operator is brought to 3 instructions, from 5, reducing the total latency by 40%.
+As a result, the inner iteration of the linear algebra operator is brought to 3 instructions, from 5, theoretically reducing the total latency by 40%.
 
 
 
