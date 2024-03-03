@@ -11,27 +11,27 @@ At the end of this tutorial you will learn how to:
 
 ## Defining or importing your CNN
 
-TrainLib_Deployer is a code generator tool for On-Device Learning on PULP SoC's. The definition of the DNN graph is manually provided by the user as part of the `USER SECTION` of [TrainLib_Deployer](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py), where several parameters, as the properties of the layers, the amount of computational cores and working memory, can be selected by the user.
+TrainLib_Deployer is a code generator tool for On-Device Learning on PULP SoC's. The definition of the DNN graph is manually provided by the user as part of the `USER SECTION` of [TrainLib_Deployer](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py), where several parameters, as the properties of the layers, the amount of computational cores and working memory, can be defined by the user.
 
 In this tutorial, we will generate and validate a simple three-layer DNN, composed as follows:
 
 ![DNN](../img/DNN.png)
 
-To do so, TrainLib_Deployer can be set up as shown in [TrainLib_Deployer.py](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py). Launching the Deployer will generate a project folder in the specified path, where a copy of pulp-trainlib, the application code and a reference PyTorch-based reference model (or Golden Model) will be generated for your On-Device Learning application. 
+To do so, TrainLib_Deployer can be set up as shown in [TrainLib_Deployer.py](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py). Launching the TrainLib_Deployer will generate a project folder in the specified path, where a copy of pulp-trainlib, the application code and a reference PyTorch-based reference model (or Golden Model) will be generated to start developing your On-Device Learning application. 
 
 In this tutorial, the generated code will be placed under `./CNN_FP32/`, in the current directory.
 
 ## Generate a FP32 CNN
 
-With a terminal open in this repository root folder (PULP-TrainLib-Tutorial/) run the TrainLib_Deployer to generate the sample ODL code in a specified folder:
+With a terminal open in this repository root folder (`PULP-TrainLib-Tutorial/`) run the TrainLib_Deployer to generate the sample ODL code in the specified folder:
 
 ```
 conda activate trainlib-tutorial
-cd ../pulp-trainlib/tools/TrainLib_Deployer
+cd pulp-trainlib/tools/TrainLib_Deployer
 python TrainLib_Deployer.py
 ```
 
-This will generate the code in `Ex01-TrainLib_Deployer/CNN_FP32/`, as specified in the options. Then, setup the environment with:
+This will generate the code in `PULP-TrainLib-Tutorial/Ex01-TrainLib_Deployer/CNN_FP32/`, as specified in the USER SECTION of `TrainLib_Deployer.py`. Then, setup the environment with:
 
 ```
 cd ../../..
@@ -44,7 +44,7 @@ cd Ex01-TrainLib_Deployer/CNN_FP32/
 make clean get_golden all run
 ```
 
-Executing the last command will generate the golden model from PyTorch (`make get_golden`) and compile the code for the execution on the PULP simulator (`make clean all run`). On the terminal, you will find both the functional and profiling information.
+Executing the last command will generate the reference golden model from PyTorch (`make get_golden`) and compile the code for the execution on the PULP GVSoC simulator (`make clean all run`). On the terminal, you will find both the functional and profiling information.
 
 ```
 make clean         : deletes executable
@@ -74,14 +74,12 @@ Layer 2 output:        _
 -0.000021               |
 -0.000006              _|
 
-                                --- STATISTICS FROM CLUSTER CORE 0  ---
-[0] cycles = 750474             <= Cycles to execute the program (LATENCY)
-[0] instr = 579014              <= Number of instructions
-[0] active cycles = 750506      <= Number of active cycles
-[0] ext load = 13               <= Direct loads from L2
-[0] TCDM cont = 0               <= Memory contentions in L1
-[0] ld stall = 164539           <= Stalls while loading data
-[0] imiss = 1793                <= Instruction cache misses
+                                            --- STATISTICS FROM CLUSTER CORE 0  ---
+[0] elapsed clock cycles = 750262           <= Cycles to execute the program (LATENCY)
+[0] number of instructions = 578854         <= Number of instructions
+[0] TCDM contentions = 0                    <= Memory contentions in L1
+[0] load stalls = 164627                    <= Stalls while loading data from L1
+[0] icache miss (clk cycles count) = 1947   <= Instruction cache misses
 Checking updated output..
 
 Layer 2 output:        _
