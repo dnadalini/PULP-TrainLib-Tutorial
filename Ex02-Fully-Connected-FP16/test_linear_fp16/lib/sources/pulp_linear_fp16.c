@@ -137,7 +137,11 @@ void pulp_linear_fp16_bw_input_grads_cl( void * Linear_args_fp16 )
     #elif MATMUL_TYPE == 1
     vm_SIMD_naive(&matMul_args);
     #elif MATMUL_TYPE == 2
-    vm_T_SIMD(&matMul_args);
+      #if NUM_CORES > 1
+      pi_cl_team_fork(NUM_CORES, vm_T_SIMD_parallel, &matMul_args);
+      #else
+      vm_T_SIMD(&matMul_args);
+      #endif
     #endif
   #endif
   /** USUAL CODE

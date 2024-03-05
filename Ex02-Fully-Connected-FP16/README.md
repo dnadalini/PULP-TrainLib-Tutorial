@@ -180,6 +180,57 @@ Estimated Cycles:   (3/2)*M*K + 2*M = 24832
 Measured Cycles:                      35268
 ```
 
+## Adding paralellization on top of optimized SIMD
+
+On top of the previous optimization, the vector-matrix kernel can be further accelerated using parallelization. This can be easily done by modifying the outer loop of the `vm_T_SIMD` function:
+
+```C
+void vm_T_SIMD_parallel (void * void_args) 
+{
+    struct matMul_args_fp16 * args = (struct matMul_args_fp16 *) void_args;
+    fp16 * A = args->A;     // In this example, the Output Gradient
+    fp16 * B = args->B;     // In this example, the Weight matrix
+    fp16 * C = args->C;     // In this example, the Input Gradient
+    uint32_t M = args->M; 
+    uint32_t K = args->K;  
+
+    // Add parallelization
+    const uint32_t blockSize = (M+NUM_CORES-1) / NUM_CORES;
+    const uint32_t start = pi_core_id()*blockSize;
+    const uint32_t stop = start+blockSize > M ? M : start+blockSize;
+
+    // For each parallel core, execute the reserved section only
+    for (int j = start; j < stop; j++) 
+    {
+        v2f16 temp = (v2f16) {0, 0};
+        for (int k = 0; k < K; k+=2) 
+        {
+            // Load both adjacent elements for A and B
+            v2f16 Av = *((v2f16*) &A[k]);
+            v2f16 Bv = *((v2f16*) &B[j*K + k]);
+            temp += Av * Bv;
+        }
+        C[j] = temp[0] + temp[1];
+    }
+}
+```
+
+The resulting function can, again, be called in the `pulp_linear_fp16_bw_input_grads_cl` we analyzed before to even more speed up the computation. This can be done by calling the new parallelized function with `pi_cl_team_fork(NUM_CORES, vm_T_SIMD_parallel, &matMul_args);`. 
+
+To profile this new optimization, first set `NUM_CORES?=8` in the [Makefile](./test_linear_fp16/Makefile). Then, execute in your terminal:
+
+```
+make clean get_golden all run MATMUL_TYPE=2 TRANSPOSE_WEIGHTS=1
+```
+
+The resulting performances are the following:
+
+```
+Cycles with 1 core:   35268
+Cycles with 8 cores:  4620
+Speedup:              7.63x
+```
+
 ## References
 
 > D. Nadalini, M. Rusci, G. Tagliavini, L. Ravaglia, L. Benini, and F. Conti, "PULP-TrainLib: Enabling On-Device Training for RISC-V Multi-Core MCUs through Performance-Driven Autotuning" [SAMOS Pre-Print Version](https://www.samos-conference.com/Resources_Samos_Websites/Proceedings_Repository_SAMOS/2022/Papers/Paper_14.pdf), [Springer Published Version](https://link.springer.com/chapter/10.1007/978-3-031-15074-6_13)

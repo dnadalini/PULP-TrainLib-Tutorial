@@ -28,3 +28,8 @@ void vm_SIMD_naive (void * void_args);
  * @brief Optimized version of vector-matrix multiplication
 */
 void vm_T_SIMD (void * void_args);
+
+/**
+ * @brief Parallelized version of the optimized vector-matrix multiplication
+*/
+void vm_T_SIMD_parallel (void * void_args);

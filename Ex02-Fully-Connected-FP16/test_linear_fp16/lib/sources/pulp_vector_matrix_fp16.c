@@ -91,3 +91,30 @@ void vm_T_SIMD (void * void_args)
         C[j] = temp[0] + temp[1];
     }
 }
+
+void vm_T_SIMD_parallel (void * void_args) 
+{
+    struct matMul_args_fp16 * args = (struct matMul_args_fp16 *) void_args;
+    fp16 * A = args->A;     // In this example, the Output Gradient
+    fp16 * B = args->B;     // In this example, the Weight matrix
+    fp16 * C = args->C;     // In this example, the Input Gradient
+    uint32_t M = args->M; 
+    uint32_t K = args->K;  
+
+    const uint32_t blockSize = (M+NUM_CORES-1) / NUM_CORES;
+    const uint32_t start = pi_core_id()*blockSize;
+    const uint32_t stop = start+blockSize > M ? M : start+blockSize;
+
+    for (int j = start; j < stop; j++) 
+    {
+        v2f16 temp = (v2f16) {0, 0};
+        for (int k = 0; k < K; k+=2) 
+        {
+            // Load both adjacent elements for A and B
+            v2f16 Av = *((v2f16*) &A[k]);
+            v2f16 Bv = *((v2f16*) &B[j*K + k]);
+            temp += Av * Bv;
+        }
+        C[j] = temp[0] + temp[1];
+    }
+}
