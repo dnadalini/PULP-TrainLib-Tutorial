@@ -18,9 +18,9 @@ In the case of a Fully-Connected Layer, the training steps can be represented as
 In this representation, the weight tensor, the input data, and the output gradient are used to compute the output, the weight gradient and the input gradient of the Fully-Connected layer. 
 In particular, the weights of the Fully-Connected layer can be stored as a matrix of size `Cout x Cin`, while the input and output activations are of size `1 x Cin` and `1 x Cout`, respectively. 
 
-## Optimizing a Vector-Matrix operator with FP16 SIMD 
+## Optimizing a Vector-Matrix Multiplication with FP16 SIMD 
 
-In case the MCU is equipped with SIMD units with Reduced Precision (e.g., vectorized FP16), the data layout can be exploited to speed up the computation. 
+In the case the MCU is equipped with SIMD units with Reduced Precision (e.g., vectorized FP16), the data layout can be exploited to speed up the computation. 
 In particular, both `load` and `multiply-and-accumulate (mac)` instructions can be used in their vectorized form to reduce the total number of instructions to compute a linear algebra operator, e.g., a Matrix Multiplication. 
 Intuitively, this can be performed by `loading two adjacent elements from a single tensor` and by `multiplying couples of elements with a single instruction`.
 
