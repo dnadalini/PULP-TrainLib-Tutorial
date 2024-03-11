@@ -1,46 +1,52 @@
-# Optimizing On-Device Learning primitives
+# Accelerating FP16 Training Primitives
 
-This tutorial presents the core optimizations that can be employed to build fast hardware-aware computational kernels on RISC-V Multicore MCUs. 
+This example shows the code optimizations to speed-up the computation of the training primitives when we use a half-precision floating-point datatype, also denoted as FP16. 
 
-With this tutorial you will learn:
-- how to consider the matrix expressions of a
-- how to optimize a linear algebra operator with FP16 SIMD
-- 
+Learning Objectives:
+- linear algebra kernels of the training primitives (mat mul or mat-vect mul)
+- how to optimize a linear algebra operator with FP16 Single-Instruction-Multiple-Data (SIMD) Instructions
 
-To understand these concepts, let's consider a Fully-Connected layer.
+To understand these concepts, this example considers a Fully-Connected layer.
 
 ## Matrix Representation of ODL Layers
 
-Most of the computational layers of CNNs can be visualized and executed as a Matrix Multiplication (MM) between suitably reshaped tensors. In case of a Fully-Connected Layer, each training step can be represented as follows:
+The CNN layer operations can be typically reshaped as Matrix Multiplications (MMs). 
+In the case of a Fully-Connected Layer, the training steps can be represented as follows:
 
 ![Fully-Connected](../img/FC_steps.png)
 
-In this representation, the weight tensor, the input data, and the output gradient are used to compute the output, the weight gradient and the input gradient of the Fully-Connected layer. In particular, the weights of the Fully-Connected layer can be stored as a matrix of size `Cout x Cin`, while the input and output activations are of size `1 x Cin` and `1 x Cout`, respectively. 
+In this representation, the weight tensor, the input data, and the output gradient are used to compute the output, the weight gradient and the input gradient of the Fully-Connected layer. 
+In particular, the weights of the Fully-Connected layer can be stored as a matrix of size `Cout x Cin`, while the input and output activations are of size `1 x Cin` and `1 x Cout`, respectively. 
 
 ## Optimizing a Vector-Matrix operator with FP16 SIMD 
 
-In case the MCU is equipped with SIMD units with Reduced Precision (e.g., vectorized FP16), the data layout can be exploited to speed up the computation. In particular, both `load` and `multiply-and-accumulate (mac)` instructions can be used in their vectorized form to reduce the total number of instructions to compute a linear algebra operator, e.g., a Matrix Multiplication. This can be performed by `loading two adjacent elements from a single tensor` and by `multiplying couples of elements with a single instruction`.
+In case the MCU is equipped with SIMD units with Reduced Precision (e.g., vectorized FP16), the data layout can be exploited to speed up the computation. 
+In particular, both `load` and `multiply-and-accumulate (mac)` instructions can be used in their vectorized form to reduce the total number of instructions to compute a linear algebra operator, e.g., a Matrix Multiplication. 
+Intuitively, this can be performed by `loading two adjacent elements from a single tensor` and by `multiplying couples of elements with a single instruction`.
 
-As a starting point, let's consider the Input Gradient step of a Fully-Connected Layer. By considering the previously presented expressions, this step can be represented as the `vector-matrix` multiplication of the `Output Gradient (O)` and the `Weights (W)`, to compute the `Input Gradient (I)`. In the following figure, the left part presents the naive implementation of said step. When looking at the memory, tensors are represented as 1-D arrays, where adjacent elements belong to the same row, while successive column elements feature a stride which is equal to the row length of the corresponding matrix. 
+As a starting point, let's consider the Input Gradient step of a Fully-Connected Layer. 
+This step is implemented as the `vector-matrix` multiplication of the `Output Gradient (O)` and the `Weights (W)`, to compute the `Input Gradient (I)`. 
+A naive implementation is shown on the left side of the figure below. 
+2D tensors are stored in memory  as 1-D arrays, where adjacent elements belong to the same matrix row. 
 
 When performing a vector-matrix multiplication, the naive version of the operator, using SIMD, should:
-- load 2 adjacent elements of O as a vector;
-- load 2 separate single column elements of W;
-- pack the elements of W in a vector of 2 elements;
-- multiply the vectorized O and W;
-- accumulate over the results by summing the previous partial products.
+- load 2 adjacent elements of `O` as a vector (1 load instruction);
+- load 2 elements of `W` in the same column (2 load instructions);
+- pack the elements of `W` in a vector of 2 elements;
+- multiply the vectorized `O` and `W`;
+- accumulate the results. 
 
-The `non-adjacent position of the elements of W`, as well as the `pack` instructions represent a non-ideal execution pattern. 
+The extra load and the pack instructions represent an overhead. 
 
 ![](../img/MM_MMT_new.png)
 
 The previous operation can be optimized by introducing two simple changes:
-- the `W matrix is stored as transposed`;
-- the vector-matrix operation is performed `row-by-row`, instead of `row-by-column`.
+- transpose the `W` matrix;
+- the vector-matrix multiplication operates `row-by-row` instead of `row-by-column`.
 
-The resulting operation is depicted on the right of the figure. In this case, `both the O and the W are loaded as vectors` and the `2 mac instructions are executed as a single SIMD instruction`. No pack instruction is used. The accumulation is performed as in the previous case. 
-
-As a result, the inner iteration of the linear algebra operator is brought to 3 instructions, from 5, theoretically reducing the total latency by 40%.
+The resulting operation is depicted on the right of the figure.
+In this case, both the elements of `O` and the inputs from `W` are loaded as vectors and only a single SIMD MAC instruction is used (no pack). 
+As a result, the inner loop of the linear algebra kernels features a reduced number of instructions, reducing the total latency by up to 40%.
 
 
 
@@ -72,7 +78,7 @@ void vm_naive (void * void_args)
 
 `Total estimated instructions: K*M*(2 ld + 1 mac) + M*(1 st) ~= 3*M*K + M`
 
-The naive vectorized expression can, then, be derived by performing vectorized loads of A, while the elements of B are loaded as in the previous case:
+The naive vectorized implementation casts the A operand as an FP16 vector `v2f16`, while the elements of B are loaded as in the previous case. 
 
 ```C
 void vm_SIMD_naive (void * void_args) 
@@ -104,11 +110,11 @@ void vm_SIMD_naive (void * void_args)
 }
 ```
 
-In this case, to multiply A and B elements in vectors of 2, the elements of B need to be loaded and packed. This is performed in the inner loop.
+In this case, to use the vectorial MAC unit, the elements of B need to be loaded and packed in the inner loop.
 
 `Total estimated instructions: (K/2)*M*(3 ld + 1 pack + 1 mac) + M*(1 sum + 1 st) ~= (5/2)*K*M + 2*M`
 
-Then, the most optimized code can be obtained by considering the B matrix (the Weight Matrix) as already transposed in memory and performing a single vectorized mac:
+The most optimized code is obtained by transposing offline the B matrix (the Weight Matrix) and:
 
 ```C
 void vm_T_SIMD (void * void_args) 
@@ -138,14 +144,20 @@ void vm_T_SIMD (void * void_args)
 
 ## Optimizing a Fully-Connected Layer: Input Gradient Step
 
-Using the previous insights, the Input Gradient Step described above can be optimized by reducing by up to 40% the clock cycles to execute. The implemented functions can be found in [pulp_vector_matrix_fp16.h](./test_linear_fp16/lib/include/pulp_vector_matrix_fp16.h) and [pulp_vector_matrix_fp16.c](./test_linear_fp16/lib/sources/pulp_vector_matrix_fp16.c). In the following tests, a Fully-Connected Layer with input feature size of 128, output feature size of 128 and weights of size 128x128 is analyzed. To see the effects of this optimization, let's run a test. First, `source ../setup.sh`. Then:
+Using the previous tricks, the Input Gradient Step described above can be optimized by reducing by up to 40% the clock cycles to execute. 
+The implemented functions can be found in [pulp_vector_matrix_fp16.h](./test_linear_fp16/lib/include/pulp_vector_matrix_fp16.h) and [pulp_vector_matrix_fp16.c](./test_linear_fp16/lib/sources/pulp_vector_matrix_fp16.c). 
+
+In the following example, we consider a Fully-Connected Layer with input feature size of 128, output feature size of 128 and a weight matrix of size 128x128. 
+After  `source ../setup.sh`, you can run:
 
 ```
 cd test_linear_fp16/
 make clean get_golden all run MATMUL_TYPE=0 TRANSPOSE_WEIGHTS=0
 ```
 
-This first command launches the Input Gradient Step of the Fully-Connected with the naive Matrix Multiplication algorithm (like `vm_naive`). Therefore, no vectorization is introduced. In this case, we obtain:
+This first command launches the Input Gradient Step of the Fully-Connected with the naive Matrix Multiplication algorithm (like `vm_naive`). 
+Therefore, no vectorization is introduced. 
+In this case, we obtain:
 
 ```
 --- vm_naive ---
@@ -153,7 +165,7 @@ Estimated Cycles:   3*M*K + M = 49280
 Measured Cycles:                67386 
 ```
 
-The second command launches the Input Gradient Step of the Fully-Connected with the naive SIMD Matrix Multiplication algorithm (like `mm_SIMD_naive`). 
+This second command launches the Input Gradient Step of the Fully-Connected with the naive SIMD Matrix Multiplication algorithm (like `mm_SIMD_naive`). 
 ```
 make clean get_golden all run MATMUL_TYPE=1 TRANSPOSE_WEIGHTS=0
 ```
@@ -180,9 +192,19 @@ Estimated Cycles:   (3/2)*M*K + 2*M = 24832
 Measured Cycles:                      35268
 ```
 
-## Adding paralellization on top of optimized SIMD
+## Parallelization + FP16 SIMD
 
-On top of the previous optimization, the vector-matrix kernel can be further accelerated using parallelization. This can be easily done by modifying the outer loop of the `vm_T_SIMD` function:
+On top of the previous optimization, the vector-matrix kernel can be further accelerated using parallelization. 
+```
+make clean get_golden all run MATMUL_TYPE=2 TRANSPOSE_WEIGHTS=1 NUM_CORES=8
+```
+The resulting performances are the following:
+```
+Cycles with 1 core:   35268
+Cycles with 8 cores:  4620
+Speedup:              7.63x
+```
+The speed up is obtained done by modifying the outer loop of the `vm_T_SIMD` function:
 
 ```C
 void vm_T_SIMD_parallel (void * void_args) 
@@ -214,22 +236,9 @@ void vm_T_SIMD_parallel (void * void_args)
     }
 }
 ```
+## Set FP16 Optimization in the TrainLib Deployer
+**FIXME**
 
-The resulting function can, again, be called in the `pulp_linear_fp16_bw_input_grads_cl` we analyzed before to even more speed up the computation. This can be done by calling the new parallelized function with `pi_cl_team_fork(NUM_CORES, vm_T_SIMD_parallel, &matMul_args);`. 
-
-To profile this new optimization, first set `NUM_CORES?=8` in the [Makefile](./test_linear_fp16/Makefile). Then, execute in your terminal:
-
-```
-make clean get_golden all run MATMUL_TYPE=2 TRANSPOSE_WEIGHTS=1
-```
-
-The resulting performances are the following:
-
-```
-Cycles with 1 core:   35268
-Cycles with 8 cores:  4620
-Speedup:              7.63x
-```
 
 ## References
 
