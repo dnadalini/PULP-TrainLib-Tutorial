@@ -1,4 +1,4 @@
-# End-to-end Training using PULP-TrainLib
+# End-to-End Training using PULP-TrainLib
 
 This example shows an end-to-end training task with PULP-TrainLib.
 
@@ -293,7 +293,7 @@ To understand how PULP-TrainLib implements parallelism, let's consider the case 
 
 ![FC_Forward](../img/FC_forward.png)
 
-The _N_ cores work in parallel to compute the output vector by distributing the workload in a balanced way. 
+The _N_ cores work in parallel to compute the output vector, evenly distributing the workload. 
 More in detail, every core computes _1/N_ of the output vector.
 In the PULP platform, the workload parallelization is handled by the function `pi_cl_team_fork(NUM_CORES, parallel_function, &args)`, which forks the computation of a `parallel_function` over the available cores. 
 In the considered case (see [pulp_linear_fp32.c](../pulp-trainlib/lib/sources/pulp_linear_fp32.c), `pulp_linear_fp32_fw_cl()`), parallelization is cast as:
@@ -313,7 +313,7 @@ matMul_args.M = 1;                      // Rows of the second matrix
 pi_cl_team_fork(NUM_CORES, mm, &matMul_args);
 ```
 
-Internally, the Matrix Multiplication kernel (see [pulp_matmul_fp32.c](../pulp-trainlib/lib/sources/pulp_matmul_fp32.c), `mm()`) is set to automatically recognize and compute its own chunk as soon as the funtion is executed by a Core:
+Internally, the Matrix Multiplication kernel (see [pulp_matmul_fp32.c](../pulp-trainlib/lib/sources/pulp_matmul_fp32.c), `mm()`) automatically calculates the portion of the input data to process (for loop iteration from `start` to `stop`):
 
 ```C
 void mm(void * matMul_args) 
@@ -348,19 +348,16 @@ void mm(void * matMul_args)
 }
 ```
 
-## Defining or importing your CNN
+## Automate the Generation of the ODL application code
 
-TrainLib_Deployer is a code generator tool for On-Device Learning on PULP SoC's. The definition of the DNN graph is manually provided by the user as part of the `USER SECTION` of [TrainLib_Deployer](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py), where several parameters, as the properties of the layers, the amount of computational cores and working memory, can be defined by the user.
+PULP-TrainLin includes the _TrainLib_Deployer_, a code generator tool for On-Device Learning on PULP SoC's. 
+The definition of the DNN graph is manually provided by the user as part of the `USER SECTION` of [TrainLib_Deployer](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py) script,together with the platform compute and memory budgets (e.g., number of cores, working memory).
 
-In this tutorial, we will generate and validate a simple three-layer DNN, composed as follows:
-
-![DNN](../img/DNN.png)
-
-To do so, TrainLib_Deployer can be set up as shown in [TrainLib_Deployer.py](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py). Launching the TrainLib_Deployer will generate a project folder in the specified path, where a copy of pulp-trainlib, the application code and a reference PyTorch-based reference model (or Golden Model) will be generated to start developing your On-Device Learning application. 
+To do so, TrainLib_Deployer can be set up as shown in [TrainLib_Deployer.py](../pulp-trainlib/tools/TrainLib_Deployer/TrainLib_Deployer.py). 
+Launching the TrainLib_Deployer will generate a project folder in the specified path, where a copy of pulp-trainlib, the application code and a reference PyTorch-based reference model (or Golden Model) will be generated to start developing your On-Device Learning application. 
 
 In this tutorial, the generated code will be placed under `./CNN_FP32/`, in the current directory.
 
-## Generate a FP32 CNN
 
 With a terminal open in this repository root folder (`PULP-TrainLib-Tutorial/`) run the TrainLib_Deployer to generate the sample ODL code in the specified folder:
 
@@ -373,23 +370,70 @@ python TrainLib_Deployer.py
 This will generate the code in `PULP-TrainLib-Tutorial/Ex01-TrainLib_Deployer/CNN_FP32/`, as specified in the USER SECTION of `TrainLib_Deployer.py`. Then, setup the environment with:
 
 ```
-cd ../../..
-source setup.sh
-```
-Now, the terminal is ready to compile the generated code. Let's:
+# ---------------------
+# --- USER SETTINGS ---
+# ---------------------
 
-```
-cd Ex01-TrainLib_Deployer/CNN_FP32/
-make clean get_golden all run
-```
+# GENERAL PROPERTIES
+project_name    = 'CNN_FP32'
+project_path    = '../../../Ex01-TrainLib_Deployer/'
+proj_folder     = project_path + project_name + '/'
 
-Executing the last command will generate the reference golden model from PyTorch (`make get_golden`) and compile the code for the execution on the PULP GVSoC simulator (`make clean all run`). On the terminal, you will find both the functional and profiling information.
+# TRAINING PROPERTIES
+epochs          = 1
+batch_size      = 1                   # BATCHING NOT IMPLEMENTED!!
+learning_rate   = 0.001
+optimizer       = "SGD"                # Name of PyTorch's optimizer
+loss_fn         = "MSELoss"            # Name of PyTorch's loss function
 
-```
-make clean         : deletes executable
-make get_golden    : generates the Golden Model's reference files
-make all           : compiles the C code application
-make run           : executes the code on the PULP GVSoC simulator
+# ------- NETWORK GRAPH --------
+# Manually define the list of the network (each layer in the list has its own properties in the relative index of each list)
+layer_list      = [ 'conv2d', 'ReLU', 'linear']
+# Layer properties
+sumnode_connections = [0, 0, 0]             # For Skipnode and Sumnode only, for each Skipnode-Sumnode couple choose a value and assign it to both, all other layer MUST HAVE 0
+
+in_ch_list      = [  8,  16, 16*6*6 ]       # Linear: size of input vector
+out_ch_list     = [  16, 16, 32 ]           # Linear: size of output vector
+hk_list         = [  3,  1,  1 ]            # Linear: = 1
+wk_list         = [  3,  1,  1 ]            # Linear: = 1
+# Input activations' properties
+hin_list        = [  8,  6,  1 ]            # Linear: = 1
+win_list        = [  8,  6,  1 ]            # Linear: = 1
+# Convolutional strides
+h_str_list      = [  1,  1,  1 ]            # Only for conv2d, maxpool, avgpool (NOT IMPLEMENTED FOR CONV2D)
+w_str_list      = [  1,  1,  1 ]            # Only for conv2d, maxpool, avgpool (NOT IMPLEMENTED FOR CONV2D)
+# Padding (bilateral, adds the specified padding to both image sides)
+h_pad_list      = [  0,  0,  0 ]            # Only for conv2d, DW (NOT IMPLEMENTED)
+w_pad_list      = [  0,  0,  0 ]            # Only for conv2d, DW (NOT IMPLEMENTED)
+# Define the lists to call the optimized matmuls for each layer (see mm_manager_list.txt, mm_manager_list_fp16.txt or mm_manager function body)
+opt_mm_fw_list  = [  0,  0,  0 ]
+opt_mm_wg_list  = [  0,  0,  0 ]
+opt_mm_ig_list  = [  0,  0,  0 ]
+# Data type list for layer-by-layer deployment (mixed precision)
+data_type_list  = ['FP32', 'FP32', 'FP32']
+# Data layout list (CHW or HWC) 
+data_layout_list    = ['CHW', 'CHW', 'CHW']   # TO DO
+# ----- END OF NETWORK GRAPH -----
+
+
+
+
+# EXECUTION PROPERTIES
+NUM_CORES       = 8
+L1_SIZE_BYTES   = 256*(2**10)
+USE_DMA = 'NO'                          # choose whether to load all structures in L1 ('NO') or in L2 and use Single Buffer mode ('SB') or Double Buffer mode ('DB') 
+# BACKWARD SETTINGS
+SEPARATE_BACKWARD_STEPS = True          # If True, writes separate weight and input gradient in backward step
+# PROFILING OPTIONS
+PROFILE_SINGLE_LAYERS = True            # If True, profiles forward and backward layer-by-layer
+# OTHER PROPERTIES
+# Select if to read the network from an external source
+READ_MODEL_ARCH = False                # NOT IMPLEMENTED!!
+
+# ---------------------------
+# --- END OF USER SETTING ---
+# ---------------------------
+
 ```
 
 
