@@ -72,9 +72,13 @@ Hello from FC
 
 In case of any issue, you can refer to the [PULP SDK](https://github.com/pulp-platform/pulp-sdk) or open an issue in this repository.
 
+
 ### Running PULP-TrainLib Examples
 You can refer to instructions inside every _Ex_ folder to run the provided examples. 
 These examples will be shown and explained during the tutorial at DATE24:  [ET02 On-Device Continual Learning Meets Ultra-Low Power Processing](https://www.date-conference.com/embedded-tutorial/et02).
+
+Despite it is not mandatory, we suggest to install and use VSCode to navigate the tutorial repository and run the code on the terminal, e.g., [VScode on Ubuntu WSL](https://code.visualstudio.com/docs/remote/wsl-tutorial).
+
 
 ## PULP-TrainLib: a General Overview
 
