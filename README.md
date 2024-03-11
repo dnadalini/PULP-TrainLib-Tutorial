@@ -55,6 +55,11 @@ Once the installation is completed, _do not forget to close the installation ter
 ```
 source setup.sh
 ```
+Optionally, you may also need to re-activate your conda enviornment that was created during the installation of the requirements:
+```
+conda activate trainlib-tutorial
+```
+
 To check if your installation procedure was successful you can try to run a helloworld test:
 ```
 cd pulp-sdk/tests/hello/
