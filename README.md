@@ -83,18 +83,19 @@ PULP-TrainLib is the first On-Device Learning optimized for RISC-V Multi-Core MC
 ### On-Device Learning
 
 On-Device Learning is a novel paradigm for enabling Deep Neural Network (DNN) Training on extreme-edge devices. 
-This enables increased levels of privacy, as the user data never leaves the edge device, decreases the network traffic, and makes the network scalability easier. 
-Furthermore, the latency of the user personalization is reduced, as updates are computed on-the-fly, without waiting for a server to retrain and deploy a new model.
+This paradigm: 
+- ensures privacy by not sharing personal data with third-party compute resources and, at the same time, reduces network traffic and potential congestion. 
+- reduces the latency for model updates with respect to waiting for a server response
 
 ### The PULP Platform
 
-The [PULP Platform](https://www.pulp-platform.org/) is a fully open-source (both hardware and software) computational platform for scalable edge computing, based on RISC-V cores. 
+The [PULP Platform](https://www.pulp-platform.org/) is a fully open-source (hardware and software) scalable platform for extreme-edge computing based on RISC-V cores. 
 
-An example of a PULP-based System-on-Chip (SoC) is the following:
+An example of a PULP-based System-on-Chip (SoC) is shown in this figure:
 
 ![PULP](img/PULP.png)
 
-In this embodiment, the Cluster features 8 parallel cores (Cores 0 to 7) for the computation, and a Cluster Controller core (Core 8) to better schedule tasks assigned to the Cluster.
+In this embodiment, the Cluster features 8 parallel cores (Cores 0 to 7) for the computation, and a Cluster Controller core (Core 8), which acts as the cluster controller.
 
 PULP-TrainLib makes efficient use of the available resources of the PULP-based SoCs, which feature:
 
@@ -104,9 +105,14 @@ PULP-TrainLib makes efficient use of the available resources of the PULP-based S
 - A Cluster DMA to access the L2 memory from the Cluster in few cycles
 - Tightly coupled accelerators, as a Mixed-Precision FPU, available for the Cluster 
 
-### General Structure
+### Tutorial PULP Platform Specs
+The platform used in this tutorial features the following specs:
+**FIXME**
 
-PULP-TrainLib is available as open source [here](https://github.com/pulp-platform/pulp-trainlib). Further details on PULP-TrainLib can be found in the related [README.md](../pulp-trainlib/README.md). 
+### PULP-TrainLib Repository
+
+PULP-TrainLib is available as open source [here](https://github.com/pulp-platform/pulp-trainlib). 
+Yo can refer to the [README.md](../pulp-trainlib/README.md) for more details. 
 
 In short, PULP-TrainLib is organized as follows:
 
@@ -123,12 +129,16 @@ tools/
         TrainLib_Deployer/      
 ```
 
+
+
 PULP-TrainLib is written in C code, with specific calls to the [PULP PMSIS libraries](https://github.com/pulp-platform/pulp-sdk/tree/main/rtos/pmsis) for parallel execution.
-To include PULP-TrainLib in your project, simply `#include "pulp_train.h"`.
+To include PULP-TrainLib in your project, you have to `#include "pulp_train.h"` in your application code.
 
 ### Contributing
 
-The project is open-source. In case you want to contribute, open a pull request on the official repository [https://github.com/pulp-platform/pulp-trainlib](https://github.com/pulp-platform/pulp-trainlib), or contact the [maintainers](https://github.com/pulp-platform/pulp-trainlib/blob/main/README.md#contributors). We are willing to collaborate on the project!
+The project is open-source. 
+In the case you want to contribute, open a pull request on the official repository [https://github.com/pulp-platform/pulp-trainlib](https://github.com/pulp-platform/pulp-trainlib), or contact the [maintainers](https://github.com/pulp-platform/pulp-trainlib/blob/main/README.md#contributors). 
+We are willing to collaborate on the project!
 
 ### References
 
