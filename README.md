@@ -33,11 +33,11 @@ python -m pip install install torch torchvision torchaudio
 python -m pip install torchsummary
 ```
 
-GCC <= 9.4. To check if gcc has the right version:
+GCC <= 9.4 is required. To check if gcc has the right version:
 ```
 gcc --version
 ```
-Please, refer to official guide to update gcc if is needed.
+Please, refer to the official guide to update gcc if is needed.
 
 ### Installation
 
@@ -51,11 +51,11 @@ Once the installation is completed, _do not forget to close the installation ter
 
 
 ### Running Application Code on PULP GVSOC
-**IMPORTANT**: Every time a new terminal is open, run the source script:
+**IMPORTANT**: Every time a new terminal is open, run the source script from the top directory of the repository:
 ```
 source setup.sh
 ```
-Optionally, you may also need to re-activate your conda enviornment that was created during the installation of the requirements:
+Optionally, you may also need to re-activate your conda environment that was created during the installation of the requirements:
 ```
 conda activate trainlib-tutorial
 ```
