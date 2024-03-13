@@ -256,7 +256,7 @@ To parallelize the training code over the 8 available cores of the cluster, you 
 ```
 make clean all run NUM_CORES=8
 ``` 
-Thanks to the parallelization we measure a speed-up of 6.97x.
+Thanks to the parallelization we measure a speed-up of 6.99x.
 The contentions to access the L1 memory and some parallelization overhead motivates the gap vs. the ideal 8x speed-up.
 More in details, we measure:
 ```
