@@ -681,11 +681,11 @@ static inline void train(){
   compare_tensors(l1_out, DW_OUTPUT, Tout_H_l1*Tout_W_l1*Tout_C_l1);
   check_tensor(l1_out, DW_OUTPUT, Tout_H_l1*Tout_W_l1*Tout_C_l1);
   // TEST
-  printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer1_in, &layer1_wgt, &layer1_out);
-  for (int index=0; index<Tout_H_l1*Tout_W_l1*Tout_C_l1; index++) {
-    if (!(index%Tout_H_l1)) printf("\n");
-    printf("%f ", l1_out[index]);
-  }
+  //printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer1_in, &layer1_wgt, &layer1_out);
+  //for (int index=0; index<Tout_H_l1*Tout_W_l1*Tout_C_l1; index++) {
+  //  if (!(index%Tout_H_l1)) printf("\n");
+  //  printf("%f ", l1_out[index]);
+  //}
   printf("\n");
   #endif
 
@@ -694,12 +694,12 @@ static inline void train(){
   compare_tensors(l1_ker_diff, WEIGHT_GRAD, Tker_H_l1*Tker_W_l1*Tin_C_l1);
   check_tensor(l1_ker_diff, WEIGHT_GRAD, Tker_H_l1*Tker_W_l1*Tin_C_l1);
   // TEST
-  printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer1_in, &layer1_wgt, &layer1_out);
-  printf("\n\nWEIGHT GRAD:");
-  for (int index=0; index<WGT_SIZE; index++) {
-   if (!(index%Tker_H_l1)) printf("\n");
-   printf("%f ", l1_ker_diff[index]);
-  }
+  //printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer1_in, &layer1_wgt, &layer1_out);
+  //printf("\n\nWEIGHT GRAD:");
+  //for (int index=0; index<WGT_SIZE; index++) {
+  // if (!(index%Tker_H_l1)) printf("\n");
+  // printf("%f ", l1_ker_diff[index]);
+  //}
   printf("\n");
   #endif
 
@@ -708,11 +708,11 @@ static inline void train(){
   compare_tensors(l1_in_diff, INPUT_GRAD, Tin_H_l1*Tin_W_l1*Tin_C_l1);
   check_tensor(l1_in_diff, INPUT_GRAD, Tin_H_l1*Tin_W_l1*Tin_C_l1);
   // TEST
-  printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer1_in, &layer1_wgt, &layer1_out);
-  for (int index=0; index<Tin_H_l1*Tin_W_l1*Tin_C_l1; index++) {
-    if (!(index%Tin_H_l1)) printf("\n");
-    printf("%f ", l1_in_diff[index]);
-  }
+  //printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer1_in, &layer1_wgt, &layer1_out);
+  //for (int index=0; index<Tin_H_l1*Tin_W_l1*Tin_C_l1; index++) {
+  //  if (!(index%Tin_H_l1)) printf("\n");
+  //  printf("%f ", l1_in_diff[index]);
+  //}
   printf("\n");
   #endif
 
@@ -721,15 +721,15 @@ static inline void train(){
   compare_tensors(l2_out, PW_OUTPUT, Tout_H_l2*Tout_W_l2*Tout_C_l2);
   check_tensor(l2_out, PW_OUTPUT, Tout_H_l2*Tout_W_l2*Tout_C_l2);
   // TEST
-  printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer2_in, &layer2_wgt, &layer2_out);
-  for (int index=0; index<Tout_H_l2*Tout_W_l2*Tout_C_l2; index++) {
-    #if HWC_LAYOUT == 0
-    if (!(index%Tout_W_l2)) printf("\n");
-    #elif HWC_LAYOUT == 1
-    if (!(index%Tout_C_l2)) printf("\n");
-    #endif
-    printf("%f ", l2_out[index]);
-  }
+  //printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer2_in, &layer2_wgt, &layer2_out);
+  //for (int index=0; index<Tout_H_l2*Tout_W_l2*Tout_C_l2; index++) {
+  //  #if HWC_LAYOUT == 0
+  //  if (!(index%Tout_W_l2)) printf("\n");
+  //  #elif HWC_LAYOUT == 1
+  //  if (!(index%Tout_C_l2)) printf("\n");
+  //  #endif
+  //  printf("%f ", l2_out[index]);
+  //}
   printf("\n");
   #endif
 
@@ -738,15 +738,15 @@ static inline void train(){
   compare_tensors(l2_ker_diff, PW_WEIGHT_GRAD, Tker_H_l2*Tker_W_l2*Tin_C_l2*Tout_C_l2);
   check_tensor(l2_ker_diff, PW_WEIGHT_GRAD, Tker_H_l2*Tker_W_l2*Tin_C_l2*Tout_C_l2);
   // TEST
-  printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer2_in, &layer2_wgt, &layer2_out);
-  for (int index=0; index<Tker_H_l2*Tker_W_l2*Tin_C_l2*Tout_C_l2; index++) {
-    #if HWC_LAYOUT == 0
-    if (!(index%Tin_C_l2)) printf("\n");
-    #elif HWC_LAYOUT == 1
-    if (!(index%Tout_C_l2)) printf("\n");
-    #endif
-    printf("%f ", l2_ker_diff[index]);
-  }
+  //printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer2_in, &layer2_wgt, &layer2_out);
+  //for (int index=0; index<Tker_H_l2*Tker_W_l2*Tin_C_l2*Tout_C_l2; index++) {
+  //  #if HWC_LAYOUT == 0
+  //  if (!(index%Tin_C_l2)) printf("\n");
+  //  #elif HWC_LAYOUT == 1
+  //  if (!(index%Tout_C_l2)) printf("\n");
+  //  #endif
+  //  printf("%f ", l2_ker_diff[index]);
+  //}
   printf("\n");
   #endif
 
@@ -755,15 +755,15 @@ static inline void train(){
   compare_tensors(l2_in_diff, PW_INPUT_GRAD, Tin_H_l2*Tin_W_l2*Tin_C_l2);
   check_tensor(l2_in_diff, PW_INPUT_GRAD, Tin_H_l2*Tin_W_l2*Tin_C_l2);
   // TEST
-  printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer2_in, &layer2_wgt, &layer2_out);
-  for (int index=0; index<Tin_H_l2*Tin_W_l2*Tin_C_l2; index++) {
-    #if HWC_LAYOUT == 0
-    if (!(index%Tin_W_l2)) printf("\n");
-    #elif HWC_LAYOUT == 1
-    if (!(index%Tin_C_l2)) printf("\n");
-    #endif
-    printf("%f ", l2_in_diff[index]);
-  }
+  //printf("\nADDR\nIN: %x, WGT: %x, OUT: %x\n", &layer2_in, &layer2_wgt, &layer2_out);
+  //for (int index=0; index<Tin_H_l2*Tin_W_l2*Tin_C_l2; index++) {
+  //  #if HWC_LAYOUT == 0
+  //  if (!(index%Tin_W_l2)) printf("\n");
+  //  #elif HWC_LAYOUT == 1
+  //  if (!(index%Tin_C_l2)) printf("\n");
+  //  #endif
+  //  printf("%f ", l2_in_diff[index]);
+  //}
   printf("\n");
   #endif
 
