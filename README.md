@@ -116,7 +116,11 @@ PULP-TrainLib makes efficient use of the available resources of the PULP-based S
 
 ### Tutorial PULP Platform Specs
 The platform used in this tutorial features the following specs:
-**FIXME**
+
+- 8 Cluster Cores
+- 8 Mixed-Precision FPUs (FP32, FP16), one per Cluster Core
+- 1.5 MB of L2 memory
+- 256 kB of L1 memory 
 
 ### PULP-TrainLib Repository
 

@@ -236,8 +236,35 @@ void vm_T_SIMD_parallel (void * void_args)
     }
 }
 ```
+
 ## Set FP16 Optimization in the TrainLib Deployer
-**FIXME**
+
+To enable FP16 optimizations, layers need to be generated in FP16. This can be set, in TrainLib_Deployer, by properly setting to this format the desired layers (e.g., the DNN of [Ex01](../Ex01-TrainLib_Deployer/)):
+
+```
+# Data type list for layer-by-layer deployment (mixed precision)
+data_type_list  = ['FP16', 'FP16', 'FP16']
+```
+
+The SIMD optimizations are applied to a collection of Matrix Multiplication (mm) algorithms ([pulp_matmul_fp16.c](./../pulp-trainlib/lib/sources/pulp_matmul_fp16.c)), which can be set to be used in each layer and step by the user. The list of available optimized mm algorithms is summarized in [mm_manager_list_fp16.txt](../pulp-trainlib/lib/include/mm_manager_list_fp16.txt). Each mm algorithm can be selected, for each layer and step, by specifying its corresponding number. E.g., the `mm_fp16_SIMD_2x4` algorithm can be selected for the input grad of the Linear Layer of Ex01's DNN by entering, in TrainLib_Deployer, its code (2):
+
+```
+# Define the lists to call the optimized matmuls for each layer (see mm_manager_list.txt, mm_manager_list_fp16.txt or mm_manager function body)
+opt_mm_fw_list  = [  0,  0,  0 ]
+opt_mm_wg_list  = [  0,  0,  0 ]
+opt_mm_ig_list  = [  0,  0,  2 ]
+```
+
+The generated code will contain a definition, in the Makefile, containing the call to the optimized mm algorithm. E.g., in case of Ex01, [Makefile](../Ex01-TrainLib_Deployer/CNN_FP32/Makefile) will contain:
+
+```
+...
+MATMUL_TYPE_FW_L2?=0         # Selects which optimized matmul to be used in FW (see mm_manager_list.txt or "MM_manager()" body to verify which one is called)
+MATMUL_TYPE_WG_L2?=0         # Selects which optimized matmul to be used in WEIGHT GRAD (see mm_manager_list.txt or "MM_manager()" body to verify which one is called)
+MATMUL_TYPE_IG_L2?=2         # Selects which optimized matmul to be used in IN GRAD (see mm_manager_list.txt or "MM_manager()" body to verify which one is called)
+```
+
+The desired mm algorithm can be changed anytime after the code generation by editing these variables for each layer and step. Note that the layers supporting mm as their core computation are `Conv2D, PointWise Conv, Linear`. 
 
 
 ## References

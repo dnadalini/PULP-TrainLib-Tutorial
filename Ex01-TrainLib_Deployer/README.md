@@ -46,6 +46,24 @@ Configuring cluster..
 Launching training procedure...
 Initializing network..
 Testing DNN initialization forward..
+FORWARD PROFILING:
+
+Layer 0
+                                            --- STATISTICS FROM CLUSTER CORE 0  ---
+[0] elapsed clock cycles = 192390           <= Cycles to execute the program (LATENCY)
+[0] number of instructions = 146906         <= Number of instructions
+[0] TCDM contentions = 0                    <= Memory contentions in L1
+[0] load stalls = 0                         <= Stalls while loading data from L1
+[0] icache miss (clk cycles count) = 0      <= Instruction cache misses
+
+Layer 1
+
+<STATISTICS OF LAYER 1>
+
+Layer 2 
+
+<STATISTICS OF LAYER 2>
+
 Layer 2 output:        _
 -0.000023               |
 0.000048                |
@@ -58,13 +76,17 @@ Layer 2 output:        _
 -0.000021               |
 -0.000006              _|
 
-                                            --- STATISTICS FROM CLUSTER CORE 0  ---
-[0] elapsed clock cycles = 750262           <= Cycles to execute the program (LATENCY)
-[0] number of instructions = 578854         <= Number of instructions
-[0] TCDM contentions = 0                    <= Memory contentions in L1
-[0] load stalls = 164627                    <= Stalls while loading data from L1
-[0] icache miss (clk cycles count) = 1947   <= Instruction cache misses
-Checking updated output..
+FORWARD PROFILING:                    <- first step of ODL
+
+<STATISTICS OF THE FORWARD STEP> 
+
+BACKWARD PROFILING:                   <- backpropagation
+
+<STATISTICS OF THE BACKWARD STEP (INVERSE LAYER ORDER)>
+
+FORWARD PROFILING:                    <- after weight update
+
+<STATISTICS OF THE FORWARD STEP> 
 
 Layer 2 output:        _
 -0.000023               |
