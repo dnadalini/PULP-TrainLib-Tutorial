@@ -28,7 +28,7 @@ pip install --user argcomplete pyelftools
 ```
 PULP-TrainLib uses Pytorch for generating test vectors and checking the results:
 ```
-python -m pip install argparse
+python -m pip install argparse six
 python -m pip install install torch torchvision torchaudio
 python -m pip install torchsummary
 ```
