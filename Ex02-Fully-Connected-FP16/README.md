@@ -165,7 +165,7 @@ Estimated Cycles:   3*M*K + M = 49280
 Measured Cycles:                67386 
 ```
 
-This second command launches the Input Gradient Step of the Fully-Connected with the naive SIMD Matrix Multiplication algorithm (like `mm_SIMD_naive`). 
+This second command launches the Input Gradient Step of the Fully-Connected with the naive SIMD Matrix Multiplication algorithm (like `vm_SIMD_naive`). 
 ```
 make clean get_golden all run MATMUL_TYPE=1 TRANSPOSE_WEIGHTS=0
 ```
@@ -178,7 +178,7 @@ Estimated Cycles:   (5/2)*K*M + 2*M = 41216
 Measured Cycles:                      43611
 ```
 
-The third command launches the Input Gradient Step of the Fully-Connected with the optimized SIMD Matrix Multiplication algorithm (like `mm_T_SIMD`). 
+The third command launches the Input Gradient Step of the Fully-Connected with the optimized SIMD Matrix Multiplication algorithm (like `vm_T_SIMD`). 
 
 ```
 make clean get_golden all run MATMUL_TYPE=2 TRANSPOSE_WEIGHTS=1
