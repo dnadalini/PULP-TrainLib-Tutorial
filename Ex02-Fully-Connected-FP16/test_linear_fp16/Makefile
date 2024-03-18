@@ -5,7 +5,7 @@ IN_CH?=128
 OUT_CH?=128
 NUM_CORES?=1
 STEP?='BACKWARD_ERROR' # Possible steps: 'FORWARD', 'BACKWARD_GRAD', 'BACKWARD_ERROR'
-MATMUL_TYPE?=0
+MATMUL_TYPE?=0			# 0: naive vm; 1: naive SIMD vm; 2: optimized SIMD
 TRANSPOSE_WEIGHTS?=0	# Choose if to save the weights as transposed or not
 # End of user settings
 
